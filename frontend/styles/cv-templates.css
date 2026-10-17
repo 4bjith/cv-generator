@@ -1,0 +1,235 @@
+/* ==========================================================================
+   CV Template System & Print Layouts
+   ========================================================================== */
+
+:root {
+  --cv-page-width-a4: 210mm;
+  --cv-page-height-a4: 297mm;
+  --cv-page-width-letter: 8.5in;
+  --cv-page-height-letter: 11in;
+
+  --cv-font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --cv-font-serif: "Georgia", "Cambria", "Times New Roman", Times, serif;
+  --cv-font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --cv-font-academic: "Palatino Linotype", "Book Antiqua", Palatino, "Times New Roman", serif;
+}
+
+/* ==========================================================================
+   Page Sheet Container (Screen & Print)
+   ========================================================================== */
+
+.cv-page-container {
+  display: flex;
+  justify-content: center;
+  padding: 2rem 1rem;
+  background-color: #cbd5e1;
+  min-height: 100%;
+  overflow-x: auto;
+}
+
+.cv-page-sheet {
+  background-color: #ffffff;
+  color: #1e293b;
+  position: relative;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  box-sizing: border-box;
+  margin: 0 auto;
+  transition: width 0.2s ease, min-height 0.2s ease;
+  overflow: hidden;
+}
+
+/* Dimensions on screen */
+.cv-page-sheet.size-a4 {
+  width: 210mm;
+  min-height: 297mm;
+}
+
+.cv-page-sheet.size-letter {
+  width: 8.5in;
+  min-height: 11in;
+}
+
+/* Typography variants */
+.cv-page-sheet.font-sans {
+  font-family: var(--cv-font-sans);
+}
+
+.cv-page-sheet.font-serif {
+  font-family: var(--cv-font-serif);
+}
+
+.cv-page-sheet.font-mono {
+  font-family: var(--cv-font-mono);
+}
+
+/* Spacing variants */
+.cv-page-sheet.spacing-compact {
+  --cv-pad: 14mm;
+  --cv-sec-gap: 1.1rem;
+  --cv-item-gap: 0.65rem;
+  --cv-line-height: 1.35;
+  font-size: 9.5pt;
+}
+
+.cv-page-sheet.spacing-normal {
+  --cv-pad: 18mm;
+  --cv-sec-gap: 1.45rem;
+  --cv-item-gap: 0.85rem;
+  --cv-line-height: 1.45;
+  font-size: 10pt;
+}
+
+.cv-page-sheet.spacing-relaxed {
+  --cv-pad: 22mm;
+  --cv-sec-gap: 1.8rem;
+  --cv-item-gap: 1.1rem;
+  --cv-line-height: 1.6;
+  font-size: 10.5pt;
+}
+
+/* Color schemes */
+.cv-page-sheet.scheme-slate {
+  --cv-accent: #2563eb;
+  --cv-accent-muted: #dbeafe;
+  --cv-heading: #0f172a;
+  --cv-text: #334155;
+  --cv-muted: #64748b;
+  --cv-border: #e2e8f0;
+}
+
+.cv-page-sheet.scheme-blue {
+  --cv-accent: #0284c7;
+  --cv-accent-muted: #e0f2fe;
+  --cv-heading: #0c4a6e;
+  --cv-text: #334155;
+  --cv-muted: #64748b;
+  --cv-border: #bae6fd;
+}
+
+.cv-page-sheet.scheme-emerald {
+  --cv-accent: #059669;
+  --cv-accent-muted: #d1fae5;
+  --cv-heading: #064e3b;
+  --cv-text: #334155;
+  --cv-muted: #64748b;
+  --cv-border: #a7f3d0;
+}
+
+.cv-page-sheet.scheme-burgundy {
+  --cv-accent: #9f1239;
+  --cv-accent-muted: #ffe4e6;
+  --cv-heading: #4c0519;
+  --cv-text: #27272a;
+  --cv-muted: #71717a;
+  --cv-border: #fecdd3;
+}
+
+.cv-page-sheet.scheme-amber {
+  --cv-accent: #b45309;
+  --cv-accent-muted: #fef3c7;
+  --cv-heading: #451a03;
+  --cv-text: #292524;
+  --cv-muted: #78716c;
+  --cv-border: #fde68a;
+}
+
+.cv-page-sheet.scheme-monochrome {
+  --cv-accent: #18181b;
+  --cv-accent-muted: #f4f4f5;
+  --cv-heading: #09090b;
+  --cv-text: #27272a;
+  --cv-muted: #52525b;
+  --cv-border: #d4d4d8;
+}
+
+/* ==========================================================================
+   Page Break Rules & Structural Flow
+   ========================================================================== */
+
+.cv-section {
+  break-inside: auto;
+}
+
+.cv-section-title {
+  break-after: avoid;
+  page-break-after: avoid;
+}
+
+.cv-item {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.cv-avoid-break {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+/* ==========================================================================
+   Print Media Styles
+   ========================================================================== */
+
+@media print {
+  @page {
+    margin: 12mm 15mm;
+  }
+
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Hide all app chrome */
+  .no-print,
+  nav,
+  header,
+  footer,
+  aside,
+  .app-shell,
+  .toast-viewport,
+  .toolbar,
+  .editor-controls,
+  button:not(.allow-print) {
+    display: none !important;
+  }
+
+  .cv-page-container {
+    padding: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
+    overflow: visible !important;
+  }
+
+  .cv-page-sheet {
+    box-shadow: none !important;
+    margin: 0 !important;
+    width: 100% !important;
+    min-height: auto !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .cv-page-sheet.size-a4 {
+    width: 100% !important;
+  }
+
+  .cv-page-sheet.size-letter {
+    width: 100% !important;
+  }
+
+  /* Maintain layout colors in print */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  a {
+    color: inherit !important;
+    text-decoration: none !important;
+  }
+}

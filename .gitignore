@@ -1,0 +1,33 @@
+# Node / Next.js
+node_modules/
+frontend/node_modules/
+.next/
+frontend/.next/
+out/
+frontend/out/
+
+# Python
+.venv/
+backend/.venv/
+**/__pycache__/
+.pytest_cache/
+backend/.pytest_cache/
+*.pyc
+**/*.pyc
+**/*.egg-info/
+*.sqlite
+*.db
+
+# Local configuration
+.env
+.env.*
+!.env.example
+*.local
+
+# Tooling / OS
+.coverage
+htmlcov/
+.DS_Store
+Thumbs.db
+*.log
+
