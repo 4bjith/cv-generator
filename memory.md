@@ -507,4 +507,33 @@ If a feature is only partially complete, keep it marked `In progress` and list t
   - Backend: **109/109 tests passing** (`pytest`) with 14 new dedicated test cases in `tests/test_ai_configuration.py` covering header auth, retry policies, production safeguards, and safe health metadata.
   - Frontend: **99/99 tests passing** (`vitest`).
 
+### 2026-10-18 — Phase 8: End-to-End Integration and Production-Readiness Validation
+
+- **Database Schema Drift Remediation & Migration Verification**:
+  - Identified 10 schema drift mismatches via `alembic check` between ORM models and Alembic migrations.
+  - Added explicit unique constraints and named indexes across `User`, `CandidateProfile`, `CareerPreferences`, `EvidenceAssociation`, `SkillExperienceAssociation`, `SkillProjectAssociation`, `SkillCertificationAssociation`, `SkillAchievementAssociation`, `CVVersion`, and `JobTarget`.
+  - Verified migration rollback and upgrade (`alembic downgrade -1` -> `0007_clarification_data` -> `alembic upgrade head` -> `0008_cover_letters`). `alembic check` now outputs `No new upgrade operations detected.` (Zero schema drift).
+- **Google Gemini Schema Inlining (`backend/app/ai/gemini_provider.py`)**:
+  - Solved Pydantic v2 `$defs` and `$ref` generation incompatibility with Google Gemini REST API. Implemented recursive dereferencing in `_prepare_gemini_schema()`, stripping unsupported OpenAPI metadata keys (`title`, `default`, `$defs`).
+  - Improved retry handling on HTTP 429 quota exhaustion and 5xx server errors without credential exposure.
+- **Comprehensive End-to-End Integration Test Suite (`backend/tests/test_e2e_integration_journey.py`)**:
+  - Implemented and verified the complete 10-step user journey:
+    1. Authentication & user isolation setup (`/auth/register`, `/auth/me`).
+    2. Master candidate profile + work experience with structured metrics + relational skills linkage + verified evidence item + profile strength check (`/profile/strength`).
+    3. Job target creation + automated requirement extraction + grounded candidate matching (`/jobs/{id}/analyze`).
+    4. Clarification questions retrieval + candidate answering + candidate profile promotion with verified provenance (`/clarifications/{qid}/promote`).
+    5. Evidence-grounded AI CV tailoring with zero-hallucination verification (`/jobs/{id}/tailor-cv`).
+    6. Independent CV snapshot editing & immutability verification (confirmed master profile was NOT mutated).
+    7. All six CV template configurations + presentation settings + standard clean JSON Resume export (`/json-resume?apply_visibility=true`).
+    8. ATS compatibility & explainable keyword scoring + grounded keyword suggestion application vs ungrounded anti-fabrication rejection.
+    9. Cover letter generation + editing + saving + new version preservation regeneration + independent duplication.
+    10. Multipage PDF exports (CV & cover letter) and DOCX binary exports with zip PK signatures.
+    11. Multi-tenant user isolation audit (User B cannot read, update, delete, or export User A's jobs, CV versions, or cover letters).
+- **Test Suite Determinism & Production Build**:
+  - Configured test isolation in `backend/tests/conftest.py` ensuring fast, deterministic mock provider execution during automated CI/CD runs.
+  - Backend: **110 passed, 1 skipped (live free-tier quota exhausted), 0 failed** out of 111 tests.
+  - Frontend: **99 passed, 0 failed** out of 99 vitest tests across 17 test suites.
+  - TypeScript: **0 errors** (`npx tsc --noEmit`).
+  - Production Build: Next.js Turbopack build compiled successfully with **0 errors**.
+
 

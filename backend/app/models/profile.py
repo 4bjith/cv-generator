@@ -1,6 +1,6 @@
 import uuid
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
-from sqlalchemy import Boolean, Float, ForeignKey, Integer, String, Text, Uuid
+from sqlalchemy import Boolean, Float, ForeignKey, Index, Integer, String, Text, UniqueConstraint, Uuid
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import JSON
@@ -18,6 +18,10 @@ class CandidateProfile(Base, TimestampMixin):
     """Candidate master career knowledge base entity."""
 
     __tablename__ = "candidate_profiles"
+    __table_args__ = (
+        UniqueConstraint("user_id", name="uq_candidate_profiles_user_id"),
+        Index("ix_candidate_profiles_user_id", "user_id", unique=True),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(
         Uuid(as_uuid=True),
@@ -27,8 +31,6 @@ class CandidateProfile(Base, TimestampMixin):
     user_id: Mapped[uuid.UUID] = mapped_column(
         Uuid(as_uuid=True),
         ForeignKey("users.id", ondelete="CASCADE"),
-        unique=True,
-        index=True,
         nullable=False,
     )
 
@@ -401,6 +403,10 @@ class CareerPreferences(Base, TimestampMixin):
     """Candidate job search and workplace preferences entity."""
 
     __tablename__ = "career_preferences"
+    __table_args__ = (
+        UniqueConstraint("profile_id", name="uq_career_preferences_profile_id"),
+        Index("ix_career_preferences_profile_id", "profile_id", unique=True),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(
         Uuid(as_uuid=True),
@@ -410,8 +416,6 @@ class CareerPreferences(Base, TimestampMixin):
     profile_id: Mapped[uuid.UUID] = mapped_column(
         Uuid(as_uuid=True),
         ForeignKey("candidate_profiles.id", ondelete="CASCADE"),
-        unique=True,
-        index=True,
         nullable=False,
     )
     target_roles: Mapped[List[str]] = mapped_column(JSON_TYPE, default=list, nullable=False)
@@ -468,6 +472,9 @@ class EvidenceAssociation(Base, TimestampMixin):
     """Generic polymorphic-like association link between EvidenceItem and profile entities."""
 
     __tablename__ = "evidence_associations"
+    __table_args__ = (
+        UniqueConstraint("evidence_id", "entity_type", "entity_id", name="uq_evidence_associations_evidence_entity"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(
         Uuid(as_uuid=True),
@@ -494,6 +501,9 @@ class SkillExperienceAssociation(Base, TimestampMixin):
     """Link table connecting a Skill to a Work Experience."""
 
     __tablename__ = "skill_experiences"
+    __table_args__ = (
+        UniqueConstraint("skill_id", "experience_id", name="uq_skill_experiences_skill_exp"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(
         Uuid(as_uuid=True),
@@ -521,6 +531,9 @@ class SkillProjectAssociation(Base, TimestampMixin):
     """Link table connecting a Skill to a Project."""
 
     __tablename__ = "skill_projects"
+    __table_args__ = (
+        UniqueConstraint("skill_id", "project_id", name="uq_skill_projects_skill_proj"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(
         Uuid(as_uuid=True),
@@ -548,6 +561,9 @@ class SkillCertificationAssociation(Base, TimestampMixin):
     """Link table connecting a Skill to a Certification."""
 
     __tablename__ = "skill_certifications"
+    __table_args__ = (
+        UniqueConstraint("skill_id", "certification_id", name="uq_skill_certifications_skill_cert"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(
         Uuid(as_uuid=True),
@@ -575,6 +591,9 @@ class SkillAchievementAssociation(Base, TimestampMixin):
     """Link table connecting a Skill to an Achievement."""
 
     __tablename__ = "skill_achievements"
+    __table_args__ = (
+        UniqueConstraint("skill_id", "achievement_id", name="uq_skill_achievements_skill_ach"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(
         Uuid(as_uuid=True),

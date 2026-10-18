@@ -22,8 +22,13 @@ TEST_DATABASE_URL = os.getenv(
     getattr(settings, "test_database_url", "postgresql+asyncpg://postgres:postgres@localhost:5432/cv_generator_test"),
 )
 
-# Apply test database URL to settings
+# Apply test database URL and deterministic test configuration to settings
 settings.database_url = TEST_DATABASE_URL
+settings.app_env = "test"
+settings.ai_provider = "mock"
+
+from app.ai.factory import clear_ai_provider_cache
+clear_ai_provider_cache()
 
 # Create async test engine
 test_engine = create_async_engine(

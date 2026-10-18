@@ -1,6 +1,6 @@
 import uuid
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
-from sqlalchemy import ForeignKey, String, Text, Uuid
+from sqlalchemy import ForeignKey, Index, String, Text, Uuid
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import JSON
@@ -20,6 +20,9 @@ class JobTarget(Base, TimestampMixin):
     """Job target / opportunity entity created and tracked by a candidate."""
 
     __tablename__ = "job_targets"
+    __table_args__ = (
+        Index("ix_job_targets_created_at", "created_at"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(
         Uuid(as_uuid=True),

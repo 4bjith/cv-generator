@@ -91,6 +91,36 @@ class GeminiProvider(AIProviderInterface):
             logger.error(f"Failed to parse Gemini text response: {e}")
             raise InternalServerError(f"Gemini response parsing error: {e}")
 
+    @staticmethod
+    def _prepare_gemini_schema(raw_schema: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Convert standard Pydantic JSON Schema into Google Gemini-compliant responseSchema.
+        Recursively dereferences $defs / $ref and strips unsupported metadata keys ($defs, definitions, title, default).
+        """
+        defs = raw_schema.get("$defs", {}) or raw_schema.get("definitions", {})
+
+        def resolve(node: Any) -> Any:
+            if not isinstance(node, dict):
+                return node
+            if "$ref" in node:
+                ref_name = node["$ref"].split("/")[-1]
+                resolved = defs.get(ref_name, {})
+                return resolve(dict(resolved))
+
+            clean: Dict[str, Any] = {}
+            for k, v in node.items():
+                if k in ("title", "$defs", "definitions", "default", "additionalProperties"):
+                    continue
+                if isinstance(v, dict):
+                    clean[k] = resolve(v)
+                elif isinstance(v, list):
+                    clean[k] = [resolve(item) if isinstance(item, dict) else item for item in v]
+                else:
+                    clean[k] = v
+            return clean
+
+        return resolve(raw_schema)
+
     async def generate_structured(
         self,
         prompt: str,
@@ -114,7 +144,8 @@ class GeminiProvider(AIProviderInterface):
         }
 
         if hasattr(schema, "model_json_schema"):
-            payload["generationConfig"]["responseSchema"] = schema.model_json_schema()
+            raw_schema = schema.model_json_schema()
+            payload["generationConfig"]["responseSchema"] = self._prepare_gemini_schema(raw_schema)
 
         if system_instruction:
             payload["systemInstruction"] = {
@@ -184,6 +215,18 @@ class GeminiProvider(AIProviderInterface):
                         return resp.json()
 
                     elif resp.status_code == 429:
+                        err_msg = "Gemini rate limit exceeded."
+                        try:
+                            err_json = resp.json()
+                            if "error" in err_json and "message" in err_json["error"]:
+                                err_msg = err_json["error"]["message"]
+                        except Exception:
+                            pass
+
+                        if attempt == self.max_retries:
+                            logger.error(f"Gemini quota/rate limit exhausted after {self.max_retries} attempts: {err_msg}")
+                            raise InternalServerError(f"Gemini API rate limit or quota exceeded: {err_msg}")
+
                         wait_time = min(2.0 ** attempt, 10.0)
                         logger.warning(
                             f"Gemini rate limit reached (429), retrying in {wait_time:.1f}s "
@@ -198,6 +241,10 @@ class GeminiProvider(AIProviderInterface):
                             f"Gemini server error ({resp.status_code}), retrying in {wait_time:.1f}s "
                             f"(attempt {attempt}/{self.max_retries})"
                         )
+                        if attempt == self.max_retries:
+                            raise InternalServerError(
+                                f"Gemini API returned server error {resp.status_code} after {self.max_retries} attempts."
+                            )
                         await asyncio.sleep(wait_time)
                         continue
 

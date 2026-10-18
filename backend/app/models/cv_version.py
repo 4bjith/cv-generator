@@ -1,6 +1,6 @@
 import uuid
 from typing import TYPE_CHECKING, Any, Dict, Optional
-from sqlalchemy import ForeignKey, String, Uuid
+from sqlalchemy import ForeignKey, Index, String, Uuid
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import JSON
@@ -20,6 +20,9 @@ class CVVersion(Base, TimestampMixin):
     """Persistent CV version with independent content snapshot derived from CandidateProfile."""
 
     __tablename__ = "cv_versions"
+    __table_args__ = (
+        Index("ix_cv_versions_created_at", "created_at"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(
         Uuid(as_uuid=True),
