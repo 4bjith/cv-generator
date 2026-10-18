@@ -1,5 +1,5 @@
 from functools import lru_cache
-from typing import List, Union
+from typing import List, Optional, Union
 from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -37,6 +37,12 @@ class Settings(BaseSettings):
     # Logging
     log_level: str = "INFO"
     log_format: str = "json"  # json or text
+
+    # AI & Gemini Provider Settings
+    gemini_api_key: Optional[str] = None
+    gemini_model: str = "gemini-1.5-flash"
+    gemini_embedding_model: str = "text-embedding-004"
+    ai_provider: str = "auto"  # auto, gemini, mock
 
     # Server binding
     host: str = "0.0.0.0"

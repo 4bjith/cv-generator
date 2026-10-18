@@ -59,10 +59,10 @@ const ProjectsView = lazy(() => import("@/components/workspace").then((m) => ({ 
 const JobTargetsView = lazy(() => import("@/components/jobs/job-targets-view").then((m) => ({ default: m.JobTargetsView })));
 const JobAnalysisView = lazy(() => import("@/components/workspace").then((m) => ({ default: m.JobAnalysisView })));
 const MatchingView = lazy(() => import("@/components/workspace").then((m) => ({ default: m.MatchingView })));
-const ClarificationsView = lazy(() => import("@/components/workspace").then((m) => ({ default: m.ClarificationsView })));
+const ClarificationsView = lazy(() => import("@/components/clarification/clarifications-view").then((m) => ({ default: m.ClarificationsView })));
 const CVVersionsView = lazy(() => import("@/components/cv/cv-versions-view").then((m) => ({ default: m.CVVersionsView })));
-const AtsAnalysisView = lazy(() => import("@/components/workspace").then((m) => ({ default: m.AtsAnalysisView })));
-const CoverEmailView = lazy(() => import("@/components/workspace").then((m) => ({ default: m.CoverEmailView })));
+const AtsAnalysisView = lazy(() => import("@/components/ats").then((m) => ({ default: m.AtsAnalysisView })));
+const CoverLetterView = lazy(() => import("@/components/cover-letter").then((m) => ({ default: m.CoverLetterView })));
 const InterviewView = lazy(() => import("@/components/workspace").then((m) => ({ default: m.InterviewView })));
 const ApplicationsView = lazy(() => import("@/components/workspace").then((m) => ({ default: m.ApplicationsView })));
 const ApplicationDetailView = lazy(() =>
@@ -214,8 +214,6 @@ export default function Home() {
         return (
           <Suspense fallback={<ClarificationsSkeleton />}>
             <ClarificationsView
-              questions={questions}
-              setQuestions={setQuestions}
               onNavigate={navigate}
               onToast={addToast}
             />
@@ -231,13 +229,13 @@ export default function Home() {
       case "ats-analysis":
         return (
           <Suspense fallback={<AtsAnalysisSkeleton />}>
-            <AtsAnalysisView ats={ats} onNavigate={navigate} />
+            <AtsAnalysisView onNavigate={navigate} onToast={addToast} />
           </Suspense>
         );
       case "cover-email":
         return (
           <Suspense fallback={<CoverEmailSkeleton />}>
-            <CoverEmailView onNavigate={navigate} onToast={addToast} />
+            <CoverLetterView onNavigate={navigate} onToast={addToast} />
           </Suspense>
         );
       case "interview":

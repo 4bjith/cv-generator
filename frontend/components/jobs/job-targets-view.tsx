@@ -28,6 +28,9 @@ import { JobTargetModal } from "./job-target-modal";
 import { JobDetailModal } from "./job-detail-modal";
 import { JobAnalysisModal } from "./job-analysis-modal";
 import { CVVersionModal } from "../cv/cv-version-modal";
+import { ClarificationModal } from "../clarification/clarification-modal";
+import { TailoringResultModal } from "../clarification/tailoring-result-modal";
+import { CVTailoringResponse } from "@/types/tailoring";
 
 interface JobTargetsViewProps {
   onToast: (title: string, message: string, type?: "success" | "info" | "error") => void;
@@ -49,6 +52,11 @@ export function JobTargetsView({ onToast, onNavigate }: JobTargetsViewProps) {
 
   const [targetedCvModalOpen, setTargetedCvModalOpen] = useState(false);
   const [targetedCvJob, setTargetedCvJob] = useState<JobTarget | null>(null);
+
+  const [clarificationModalOpen, setClarificationModalOpen] = useState(false);
+  const [clarificationJob, setClarificationJob] = useState<JobTarget | null>(null);
+  const [tailoringResult, setTailoringResult] = useState<CVTailoringResponse | null>(null);
+  const [tailoringResultModalOpen, setTailoringResultModalOpen] = useState(false);
 
   const [deleteConfirmJob, setDeleteConfirmJob] = useState<JobTarget | null>(null);
 
@@ -91,6 +99,11 @@ export function JobTargetsView({ onToast, onNavigate }: JobTargetsViewProps) {
   const handleCreateTargetedCv = (job: JobTarget) => {
     setTargetedCvJob(job);
     setTargetedCvModalOpen(true);
+  };
+
+  const handleOpenClarification = (job: JobTarget) => {
+    setClarificationJob(job);
+    setClarificationModalOpen(true);
   };
 
   const handleDeleteConfirm = async () => {
@@ -428,6 +441,18 @@ export function JobTargetsView({ onToast, onNavigate }: JobTargetsViewProps) {
                       </Button>
 
                       <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenClarification(job);
+                        }}
+                        title="Clarify missing qualifications and tailor CV"
+                      >
+                        Clarify & Tailor
+                      </Button>
+
+                      <Button
                         variant="quiet"
                         size="sm"
                         onClick={(e) => {
@@ -524,6 +549,10 @@ export function JobTargetsView({ onToast, onNavigate }: JobTargetsViewProps) {
         onClose={() => setAnalysisModalOpen(false)}
         job={analysisJob}
         onCreateCvRequest={handleCreateTargetedCv}
+        onClarifyRequest={(job) => {
+          setClarificationJob(job);
+          setClarificationModalOpen(true);
+        }}
         onToast={onToast}
       />
 
@@ -534,12 +563,38 @@ export function JobTargetsView({ onToast, onNavigate }: JobTargetsViewProps) {
         initialJobTargetId={targetedCvJob?.id}
         initialName={targetedCvJob ? `${targetedCvJob.title} - ${targetedCvJob.company_name}` : ""}
         onToast={onToast}
-        onSuccess={(created) => {
+        onSuccess={(_created) => {
           setTargetedCvModalOpen(false);
           if (onNavigate) {
             onNavigate("cv-generation");
           }
         }}
+      />
+
+      {/* Clarification Questions Modal */}
+      <ClarificationModal
+        job={clarificationJob}
+        open={clarificationModalOpen}
+        onClose={() => setClarificationModalOpen(false)}
+        onTailoringSuccess={(res) => {
+          setTailoringResult(res);
+          setTailoringResultModalOpen(true);
+        }}
+        onToast={onToast}
+      />
+
+      {/* Tailored CV Result & Template Preview Modal */}
+      <TailoringResultModal
+        open={tailoringResultModalOpen}
+        result={tailoringResult}
+        onClose={() => setTailoringResultModalOpen(false)}
+        onOpenEditor={(_versionId) => {
+          setTailoringResultModalOpen(false);
+          if (onNavigate) {
+            onNavigate("cv-editor");
+          }
+        }}
+        onToast={onToast}
       />
 
       {/* Delete Confirmation Modal */}

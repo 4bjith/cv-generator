@@ -22,6 +22,7 @@ interface JobAnalysisModalProps {
   open: boolean;
   onClose: () => void;
   onCreateCvRequest: (job: JobTarget) => void;
+  onClarifyRequest?: (job: JobTarget) => void;
   onToast: (title: string, message: string, type?: "success" | "info" | "error") => void;
 }
 
@@ -30,6 +31,7 @@ export function JobAnalysisModal({
   open,
   onClose,
   onCreateCvRequest,
+  onClarifyRequest,
   onToast,
 }: JobAnalysisModalProps) {
   const { data: analysisResponse, isLoading, isError, refetch } = useJobAnalysis(
@@ -198,10 +200,22 @@ export function JobAnalysisModal({
             Re-Analyze Match
           </Button>
 
-          <div style={{ display: "flex", gap: "0.75rem" }}>
+          <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
             <Button variant="ghost" onClick={onClose}>
               Close
             </Button>
+            {onClarifyRequest ? (
+              <Button
+                variant="secondary"
+                icon={<Sparkle size={16} weight="fill" aria-hidden="true" />}
+                onClick={() => {
+                  onClose();
+                  onClarifyRequest(job);
+                }}
+              >
+                Clarify & Tailor
+              </Button>
+            ) : null}
             <Button
               variant="primary"
               icon={<Sparkle size={16} weight="fill" aria-hidden="true" />}

@@ -786,6 +786,8 @@ class CVContentSnapshot(BaseModel):
 
         # 5. Presentation normalization
         pres = d.get("presentation")
+        if hasattr(pres, "model_dump"):
+            pres = pres.model_dump()
         if pres is None or not isinstance(pres, dict):
             pres = {}
         else:
@@ -811,6 +813,8 @@ class CVContentSnapshot(BaseModel):
 
         # 6. Extensions normalization
         ext = d.get("extensions")
+        if hasattr(ext, "model_dump"):
+            ext = ext.model_dump()
         if ext is None or not isinstance(ext, dict):
             ext = {}
         else:

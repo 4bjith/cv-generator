@@ -1,4 +1,10 @@
 import { apiClient } from "@/lib/api/axios";
+import {
+  ClarificationAnswerRequest,
+  ClarificationBulkAnswerRequest,
+  ClarificationPromoteRequest,
+  ClarificationSessionResponse,
+} from "@/types/clarification";
 import { CVVersionListResponse } from "@/types/cv";
 import {
   JobAnalysisResponse,
@@ -9,10 +15,12 @@ import {
   JobTargetListResponse,
   JobTargetUpdate,
 } from "@/types/job";
+import { CVTailorRequest, CVTailoringResponse } from "@/types/tailoring";
 
 /**
  * Job Target API Service.
- * Encapsulates all job target, intelligence extraction, and candidate matching operations.
+ * Encapsulates all job target, intelligence extraction, candidate matching,
+ * clarification engine, and evidence-grounded AI tailoring operations.
  */
 export const jobsApi = {
   async listJobs(filters?: JobTargetFilters): Promise<JobTargetListResponse> {
@@ -68,6 +76,66 @@ export const jobsApi = {
     const response = await apiClient.get<CVVersionListResponse>(`/jobs/${id}/versions`, {
       params: { limit, offset },
     });
+    return response.data;
+  },
+
+  // Clarification Engine Operations
+  async getClarifications(jobId: string): Promise<ClarificationSessionResponse> {
+    const response = await apiClient.get<ClarificationSessionResponse>(`/jobs/${jobId}/clarifications`);
+    return response.data;
+  },
+
+  async answerClarificationQuestion(
+    jobId: string,
+    questionId: string,
+    payload: ClarificationAnswerRequest
+  ): Promise<ClarificationSessionResponse> {
+    const response = await apiClient.post<ClarificationSessionResponse>(
+      `/jobs/${jobId}/clarifications/${questionId}/answer`,
+      payload
+    );
+    return response.data;
+  },
+
+  async skipClarificationQuestion(
+    jobId: string,
+    questionId: string
+  ): Promise<ClarificationSessionResponse> {
+    const response = await apiClient.post<ClarificationSessionResponse>(
+      `/jobs/${jobId}/clarifications/${questionId}/skip`
+    );
+    return response.data;
+  },
+
+  async promoteClarificationAnswer(
+    jobId: string,
+    questionId: string,
+    payload: ClarificationPromoteRequest
+  ): Promise<{ status: string; requirement: string }> {
+    const response = await apiClient.post<{ status: string; requirement: string }>(
+      `/jobs/${jobId}/clarifications/${questionId}/promote`,
+      payload
+    );
+    return response.data;
+  },
+
+  async bulkAnswerClarifications(
+    jobId: string,
+    payload: ClarificationBulkAnswerRequest
+  ): Promise<ClarificationSessionResponse> {
+    const response = await apiClient.post<ClarificationSessionResponse>(
+      `/jobs/${jobId}/clarifications/bulk`,
+      payload
+    );
+    return response.data;
+  },
+
+  // Evidence-Grounded AI CV Tailoring Operations
+  async tailorCv(jobId: string, payload?: CVTailorRequest): Promise<CVTailoringResponse> {
+    const response = await apiClient.post<CVTailoringResponse>(
+      `/jobs/${jobId}/tailor-cv`,
+      payload || {}
+    );
     return response.data;
   },
 };

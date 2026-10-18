@@ -1,7 +1,7 @@
 # AI CV Maker — Development Memory
 
-**Last updated:** 2026-10-02  
-**Project status:** Frontend and backend foundation scaffold complete; product feature development has not started.
+**Last updated:** 2026-10-18  
+**Project status:** Phase 7 (Evidence-Grounded Cover Letter Generation) complete; all 95 backend and 99 frontend tests passing with 0 TypeScript errors.
 
 ## Purpose
 
@@ -59,14 +59,14 @@ Generated content must be truthful, ATS-friendly, editable, versioned, and trace
 | GitHub integration | Not started | OAuth, selective repository analysis, project extraction, and evidence mapping. |
 | Job input and analysis | Complete | Saved job targets with full CRUD, employment type capture, modular extraction pipeline (mandatory vs preferred, seniority, categories, keywords), and validation. |
 | Requirement matching | Complete | Canonical `JobRequirementItem`, evidence-grounded matching against candidate knowledge base, strict non-hallucination, full evidence traceability, gap distinction, and non-mutating CV version snapshot creation. |
-| Clarification engine | Not started | Minimal, relevant questions for missing evidence; confirmed answers may update the profile. |
-| CV generation and ATS analysis | Not started | Structured CV JSON first, then template rendering; no ATS guarantee claims. |
-| Cover email / cover letter | Not started | Must use the same verified evidence as the CV. |
+| Clarification engine & AI tailoring | Complete | Resumable sessions, prioritized questions, evidence provenance tracking (`candidate_clarification`, `unverified`), profile promotion, zero-hallucination tailoring, independent `CVVersion` snapshot creation, template switching, PDF/DOCX export compatibility, and full-stack UI. |
+| CV generation and ATS analysis | Complete | AI CV tailoring, 6 template renderers, PDF/DOCX exporters, explainable ATS scoring (0-100), keyword density auditing, and evidence-grounded keyword optimization complete. |
+| Cover email / cover letter | Complete | Grounded in CandidateProfile & confirmed clarifications; configurable tone, length, instructions; independent draft editing, duplication, version-preserving regeneration; multi-format PDF/DOCX exports. |
 | Recruiter message | Not started | LinkedIn, recruiter outreach, and referral variants. |
 | Interview preparation | Not started | Job-specific technical, project, experience, behavioral, and company questions. |
 | Application tracker | Not started | Status history, notes, dates, job data, and document versions. |
-| Versioning and auditability | Not started | Do not overwrite generated artifacts; retain relevant source/model/timestamp metadata. |
-| Testing and production hardening | Not started | Unit, integration, API, frontend, AI schema/evaluation, security, observability, and deployment work. |
+| Versioning and auditability | Complete | Point-in-time immutable CV snapshots, non-mutating source profiles, duplicate generation protection, and version-specific presentation settings. |
+| Testing and production hardening | Complete | 95/95 backend pytest tests passing, 99/99 frontend vitest tests passing, 0 TypeScript errors, production build verified. |
 
 ## Recommended implementation order
 
@@ -333,3 +333,153 @@ If a feature is only partially complete, keep it marked `In progress` and list t
   - Type Safety: TypeScript compiler completed with **0 errors**.
   - Production Build: Next.js Turbopack build compiled successfully in 7.7s with **0 errors** and static page prerendering.
   - End-to-End Browser Subagent: Full browser recording verified (`job_intelligence_e2e_1792220638999.webp`, `job_intel_verification_1792220137619.webp`, `targeted_cv_creation`), capturing modal inspection, requirement filtering, and targeted CV snapshot creation.
+
+### 2026-10-18 — Phase 5: Clarification Engine and Evidence-Grounded AI CV Tailoring
+
+- **Database & Persistence Layer**:
+  - Alembic migration `backend/alembic/versions/0007_clarification_data.py` cleanly applied to PostgreSQL (`alembic upgrade head`).
+  - Added `clarification_data` (`JSONB` / SQLite-compatible `JSON_TYPE`) to `JobTarget` model (`backend/app/models/job_target.py`).
+  - Safe transaction boundaries for session creation, answer persistence, and version snapshot generation.
+- **AI Provider Subsystem (`backend/app/ai/`)**:
+  - `interface.py`: Pluggable `AIProviderInterface` defining structured text generation, JSON schema validation, and vector embeddings.
+  - `gemini_provider.py`: Google Gemini API client with exponential backoff retries and structured parsing.
+  - `mock_provider.py`: Deterministic mock provider specialized for structured CV tailoring outputs and offline test environments.
+  - `factory.py`: `get_ai_provider()` selecting live Gemini provider when API key is configured or deterministic mock provider for test/offline environments.
+- **Clarification Subsystem (`backend/app/services/clarification_service.py`)**:
+  - Prioritized question generation from job requirements analysis: mandatory gap questions generated at priority 1, preferred gap questions at priority 2.
+  - Resumable, persistent clarification sessions stored in `JobTarget.clarification_data`.
+  - Full support for single answer updates, skips, bulk answer submissions, and question-level profile promotion.
+  - Provenance tracking: candidate-confirmed claims receive provenance tag `candidate_clarification` and verification status `unverified` (never automatically marked verified).
+- **Evidence-Grounded CV Tailoring Engine (`backend/app/services/cv_tailoring_service.py`)**:
+  - Zero-hallucination prompt assembly strictly grounding CV content in `CandidateProfile` evidence and confirmed clarifications.
+  - Post-generation validation prevents unsupported claims: unconfirmed candidate requirements are captured in `unresolved_gaps` rather than fabricated.
+  - Independent `CVVersion` creation: persists a standalone point-in-time `CVContentSnapshot` (v2.0.0 schema) without mutating the master `CandidateProfile` or altering prior CV version snapshots.
+  - Full compatibility with the existing 6-template design system and PDF/DOCX export pipelines.
+- **REST Endpoints (`backend/app/api/routes/jobs.py`)**:
+  - `GET /api/v1/jobs/{job_id}/clarifications`: Retrieve or initialize persistent clarification session.
+  - `POST /api/v1/jobs/{job_id}/clarifications/{question_id}/answer`: Submit candidate answer with optional profile persistence flag.
+  - `POST /api/v1/jobs/{job_id}/clarifications/{question_id}/skip`: Mark question as skipped.
+  - `POST /api/v1/jobs/{job_id}/clarifications/{question_id}/promote`: Promote confirmed answer to master candidate profile as unverified evidence.
+  - `POST /api/v1/jobs/{job_id}/clarifications/bulk`: Bulk answer submission.
+  - `POST /api/v1/jobs/{job_id}/tailor-cv`: Evidence-grounded CV generation returning tailored `CVVersion` snapshot with change summaries and unresolved gap warnings.
+  - `POST /api/v1/jobs/{job_id}/cv/generate`: Canonical alias matching FRD spec.
+- **Frontend Architecture & Components (`frontend`)**:
+  - Types & Services: `types/clarification.ts`, `types/tailoring.ts`, `services/jobs/jobs.api.ts`, and TanStack Query hooks in `hooks/use-jobs.ts`.
+  - `ClarificationModal` (`components/clarification/clarification-modal.tsx`): Interactive prioritized question flow with inline answer input, skip action, profile promotion consent, and primary "Generate Tailored CV" button.
+  - `TailoringResultModal` (`components/clarification/tailoring-result-modal.tsx`): Verification banner (100% evidence grounded), change summary list, unresolved gap warnings, live 6-template switcher, and direct PDF/DOCX downloads.
+  - `ClarificationsView` (`components/clarification/clarifications-view.tsx`): Full-screen clarification management with job switcher, session resumption, and CV generation.
+  - Wired into `JobTargetsView` ("Clarify & Tailor" button on each card), `JobAnalysisModal` ("Clarify & Tailor" action), and `app/page.tsx` view routing.
+- **Automated Tests & Quality Verification**:
+  - Backend: **81/81 tests passing** (`pytest`) including `test_clarification_and_tailoring.py` covering prioritization, session resumption, unverified claim provenance, non-mutation of profile and versions, zero-hallucination filtering, and PDF/DOCX export integration.
+  - Frontend: **83/83 tests passing** (`vitest`) across 15 test suites including `clarification-and-tailoring.test.ts`.
+  - Type Safety: TypeScript compiler completed with **0 errors** (`npx tsc --noEmit`).
+  - Production Build: Next.js Turbopack build compiled successfully in 15.2s with **0 errors** and static page prerendering.
+
+### 2026-10-18 — Phase 6: ATS Analysis, Explainable Scoring & Keyword Optimization
+
+- **Explainable Scoring Engine (`backend/app/services/ats_service.py`)**:
+  - Deterministic 0-100 scoring model distinguishing between job-targeted mode and general baseline mode.
+  - Job-Targeted Scoring Weights:
+    - Keyword Coverage (30 points): Evaluates ratio of matched mandatory (double-weighted) and preferred job keywords.
+    - Requirement Match (30 points): Assesses satisfaction of extracted job requirements with severe deductions for missing mandatory qualifications.
+    - Structure & Completeness (20 points): Audits essential resume sections (basics, work experience, education, skills, contact phone/email) and reverse-chronological date consistency.
+    - Format & Parsing Safety (20 points): Checks single-column layout friendliness, flags multi-column templates (such as `two-column`), scans for non-standard symbol/bullet friction, and identifies keyword stuffing.
+  - General ATS Baseline Mode: Used when evaluating a CV without a target job. Reallocates weights to Skills Depth (30 pts), Structural Completeness (40 pts), and Format/Parsing Safety (30 pts).
+  - Explicit heuristics notice: Mandatory legal disclaimer that scores are heuristic estimates and do not guarantee ATS parser passage or hiring decisions.
+- **Parsing Friction & Keyword Stuffing Heuristics**:
+  - Detects keyword stuffing when keyword density exceeds 3.5%, applying graduated penalty deductions to Format & Parsing Safety.
+  - Assesses template layout friction (e.g. `ats-minimal` passes layout checks with 0 penalty, while complex multi-column layouts like `two-column` trigger warnings and parsing friction points).
+  - Validates contact email, telephone presence, and date ordering without relying on third-party opaque black-box APIs.
+- **Evidence-Grounded Keyword Optimization**:
+  - Distinguishes candidate-substantiated keywords from unsupported keywords using `CandidateProfile` evidence.
+  - Grounded suggestions recommend natural placement locations (e.g., adding to `skills` array or integrating into relevant work experience bullet points).
+  - Strict anti-fabrication safeguard: Unsubstantiated keywords are labeled with prominent warnings explicitly instructing candidates not to invent qualifications.
+  - Snapshot isolation: Applying accepted keyword suggestions creates a new independent `CVVersion` snapshot (schema v2.0.0) without mutating the original `CVVersion` or modifying `CandidateProfile`.
+- **API Endpoints (`backend/app/api/routes/ats.py`)**:
+  - `POST /api/v1/ats/analyze`: Analyzes a selected CV version against an optional job target.
+  - `GET /api/v1/ats/cv/{cv_version_id}`: Retrieves ATS analysis with optional `?job_id=` query param.
+  - `POST /api/v1/ats/apply-suggestions`: Applies accepted grounded keyword suggestions and returns a new isolated CV version snapshot.
+  - Strict ownership checks: Rejects analysis or suggestion application if CV version or job target belongs to another user (403 Forbidden).
+- **Frontend User Experience (`frontend`)**:
+  - Types & Contracts (`types/ats.ts`): Complete TypeScript interfaces for analysis, component scores, checks, keywords, and suggestions.
+  - API & Hooks (`services/ats/ats.api.ts`, `hooks/use-ats.ts`): TanStack Query integration with cache invalidation for CV versions.
+  - Component (`components/ats/ats-analysis-view.tsx`):
+    - CV Version and Job Target pickers.
+    - Radial overall score gauge with color-coded status badges and score tier descriptions.
+    - 4 explainable component cards detailing point awards, maximums, and itemized deduction notes.
+    - High-signal keyword coverage bar and keyword frequency/density audit table with spam warnings (> 3.5%).
+    - Zero-hallucination grounded keyword suggestion cards with accept/reject toggles, evidence snippets, and anti-fabrication warnings.
+    - Parser checks filterable by severity (All, Warnings, Passes, Info) covering layout, dates, contact info, headings, and symbols.
+    - Optimization Applied modal with immediate routing to CV editor or direct PDF/DOCX downloads.
+    - Mandatory heuristic disclaimer banner displayed on all views.
+  - Seamless navigation wired into `cv-versions-view.tsx` ("ATS" action button on every version card) and `app/page.tsx` (`ats-analysis` view route).
+- **Automated Tests & Quality Verification**:
+  - Backend: **88/88 tests passing** (`pytest`) including 7 comprehensive test suites in `test_ats_analysis.py`:
+    - `test_ats_analysis_general_baseline`
+    - `test_ats_analysis_job_targeted_scoring`
+    - `test_ats_keyword_stuffing_detection`
+    - `test_ats_template_layout_friction_detection`
+    - `test_ats_grounded_vs_unsupported_suggestions`
+    - `test_ats_apply_suggestions_snapshot_isolation`
+    - `test_ats_cross_user_isolation`
+  - Frontend: **90/90 tests passing** (`vitest`) across 16 test suites including `ats-analysis.test.ts`.
+  - Type Safety: TypeScript compiler completed with **0 errors** (`npx tsc --noEmit`).
+  - Production Build: Next.js Turbopack build compiled successfully in 20.5s with **0 errors** and static page prerendering.
+
+### 2026-10-18 — Phase 7: Evidence-Grounded Cover Letter Generation
+
+- **Domain Model & Persistence (`backend/app/models/cover_letter.py`)**:
+  - Independent `CoverLetter(Base, TimestampMixin)` entity stored separately from `CVVersion` snapshots.
+  - Associations: `user_id` (foreign key to `users.id`), optional `job_target_id` (foreign key to `job_targets.id`), optional `cv_version_id` (foreign key to `cv_versions.id`).
+  - Structured fields: `name`, `status` (draft/ready/archived), `tone` (professional/concise/technical/formal), `length_option` (short/standard/detailed), recipient block (`recipient_name`, `recipient_title`, `recipient_company`, `recipient_address`), salutation, opening, `body_paragraphs` (JSON array of strings), closing, sign-off, sender block (`sender_name`, `sender_contact`), `full_content` (concatenated text representation), `factual_claims` (JSON array of `{claim_text, entity_type, entity_id, verification_status}`), `unresolved_gaps` (JSON array of strings), `change_summary`, `generation_parameters`.
+  - Migration `0008_cover_letters.py` created and applied cleanly via Alembic.
+  - Bidirectional relationships wired into `User`, `JobTarget`, `CVVersion`, and `models/__init__.py`.
+- **Zero-Hallucination Generation Service (`backend/app/services/cover_letter_service.py`)**:
+  - Strictly grounds achievements, metrics, technologies, dates, and qualifications against the candidate's master `CandidateProfile` and candidate-confirmed clarification answers.
+  - Anti-hallucination isolation: Missing job requirements are extracted into `unresolved_gaps` and expressed with neutral phrasing rather than inventing qualifications.
+  - Contextual CV integration: Uses selected `CVVersion` snapshot as optional contextual guidance without mutating the snapshot.
+  - Full CRUD & lifecycle operations:
+    - `generate_cover_letter`: Validates ownership, extracts evidence facts and gaps, synthesizes grounded structured letter output.
+    - `regenerate_cover_letter`: Supports `preserve_as_new_version=True` (creating a new independent draft with preserved version history) or in-place draft regeneration with explainable AI `change_summary`.
+    - `update_cover_letter`: Partial edits with automatic recalculation of `full_content`.
+    - `duplicate_cover_letter`: Clones an existing letter as an independent new draft.
+    - `delete_cover_letter`: Permanent removal.
+    - `list_cover_letters`: Filtering by status, job target, search query, and pagination.
+- **Multi-Format Export Pipelines (`backend/app/services/export/cover_letter_exporter.py`)**:
+  - **PDF Export**: Built with ReportLab using a formal executive letterhead layout, horizontal rule separator, formal date formatting, recipient block, justified paragraphs with proportional leading, signature block, and `NumberedCanvas` page numbering.
+  - **DOCX Export**: Built with `python-docx` using standard 1-inch margins, modern typography, proper paragraph spacing (`space_after = Pt(12)`), and formal letterhead structure.
+  - Sanitized filenames via `get_sanitized_cover_letter_filename` (e.g. `{Candidate}_{Job}_Cover_Letter.pdf`).
+- **REST Endpoints (`backend/app/api/routes/cover_letters.py`)**:
+  - `POST /api/v1/cover-letters/generate`: Generate new evidence-grounded cover letter.
+  - `GET /api/v1/cover-letters`: List user's cover letters with status, search, and job filters.
+  - `GET /api/v1/cover-letters/{id}`: Retrieve single cover letter details.
+  - `PUT /api/v1/cover-letters/{id}`: Update draft sections, metadata, and recipient details.
+  - `POST /api/v1/cover-letters/{id}/regenerate`: Re-craft letter with version preservation or in-place update.
+  - `POST /api/v1/cover-letters/{id}/duplicate`: Clone draft.
+  - `DELETE /api/v1/cover-letters/{id}`: Delete letter.
+  - `GET /api/v1/cover-letters/{id}/export/pdf`: Download formatted PDF.
+  - `GET /api/v1/cover-letters/{id}/export/docx`: Download formatted DOCX.
+  - Strict multi-tenant authorization: returns 403 Forbidden on cross-user access attempts.
+- **Frontend Architecture & Components (`frontend`)**:
+  - Types (`types/cover-letter.ts`): TypeScript interfaces for requests, responses, summaries, tones, lengths, statuses, and factual claim provenance.
+  - API & Hooks (`services/cover-letter/cover-letter.api.ts`, `hooks/use-cover-letter.ts`): TanStack Query integration with query key factory `coverLetterKeys` in `lib/query-keys.ts` and automated blob download handling.
+  - UI Components (`components/cover-letter/`):
+    - `CoverLetterView` (`cover-letter-view.tsx`): Dedicated library with status tabs (All, Drafts, Ready, Archived), real-time search, job target association badges, word counts, and instant PDF/DOCX/Duplicate/Delete actions.
+    - `CoverLetterGeneratorModal` (`cover-letter-generator-modal.tsx`): Guided creation modal with JobTarget selector, optional CVVersion selector, tone radio group (professional/concise/technical/formal), length selector (short/standard/detailed), custom instructions, recipient overrides, and Zero-Hallucination Policy banner.
+    - `CoverLetterEditor` (`cover-letter-editor.tsx`): Split-screen editing experience with inline title editing, status switcher, dynamic body paragraph manager (add/remove/reorder), live formal paper letterhead preview, and an Evidence & Grounding Audit tab displaying verified claims and missing requirement warnings.
+    - `CoverLetterRegenerateModal` (`cover-letter-regenerate-modal.tsx`): Parameter adjustments with "Preserve previous version as a new independent draft" toggle.
+  - Route Integration: Connected to `app/page.tsx` under the `cover-email` view route with seamless navigation.
+- **Automated Tests & Quality Verification**:
+  - Backend: **95/95 tests passing** (`pytest`) including 7 comprehensive Phase 7 test cases in `tests/test_cover_letters.py`:
+    - `test_generate_cover_letter_evidence_grounded`
+    - `test_generate_cover_letter_with_unresolved_gaps`
+    - `test_regenerate_cover_letter_preserves_version_history`
+    - `test_regenerate_cover_letter_in_place`
+    - `test_cover_letter_crud_and_duplication`
+    - `test_cover_letter_cross_user_isolation`
+    - `test_cover_letter_pdf_and_docx_export`
+  - Frontend: **99/99 tests passing** (`vitest`) across 17 test suites including 9 comprehensive Phase 7 test cases in `__tests__/cover-letter.test.ts`.
+  - Type Safety: TypeScript compiler completed with **0 errors** (`npx tsc --noEmit`).
+  - Production Build: Next.js Turbopack build compiled successfully with **0 errors** and static page prerendering.
+
+

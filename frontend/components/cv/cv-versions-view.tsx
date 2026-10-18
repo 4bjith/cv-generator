@@ -9,6 +9,7 @@ import {
   MagnifyingGlass,
   PencilSimple,
   Plus,
+  ShieldCheck,
   Sparkle,
   Target,
   Trash,
@@ -394,6 +395,17 @@ export function CVVersionsView({ onToast, onNavigate }: CVVersionsViewProps) {
                   >
                     Inspect
                   </Button>
+                  {onNavigate && (
+                    <Button
+                      size="sm"
+                      variant="quiet"
+                      icon={<ShieldCheck size={14} />}
+                      onClick={() => onNavigate("ats-analysis")}
+                      title="Analyze ATS Score & Optimization"
+                    >
+                      ATS
+                    </Button>
+                  )}
                 </div>
 
                 <div style={{ display: "flex", gap: "0.25rem" }}>

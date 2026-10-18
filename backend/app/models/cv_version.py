@@ -8,6 +8,7 @@ from sqlalchemy.types import JSON
 from app.db.base import Base, TimestampMixin
 
 if TYPE_CHECKING:
+    from app.models.cover_letter import CoverLetter
     from app.models.job_target import JobTarget
     from app.models.user import User
 
@@ -49,6 +50,10 @@ class CVVersion(Base, TimestampMixin):
     job_target: Mapped[Optional["JobTarget"]] = relationship(
         "JobTarget",
         back_populates="cv_versions",
+    )
+    cover_letters: Mapped[List["CoverLetter"]] = relationship(
+        "CoverLetter",
+        back_populates="cv_version",
     )
 
     def __repr__(self) -> str:

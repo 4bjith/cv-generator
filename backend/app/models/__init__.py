@@ -1,4 +1,5 @@
 from app.models.auth_session import AuthSession
+from app.models.cover_letter import CoverLetter
 from app.models.cv_version import CVVersion
 from app.models.job_target import JobTarget
 from app.models.profile import (
@@ -26,6 +27,7 @@ __all__ = [
     "AuthSession",
     "JobTarget",
     "CVVersion",
+    "CoverLetter",
     "CandidateProfile",
     "CandidateLink",
     "WorkExperience",
@@ -43,5 +45,6 @@ __all__ = [
     "SkillCertificationAssociation",
     "SkillAchievementAssociation",
 ]
+
 
 

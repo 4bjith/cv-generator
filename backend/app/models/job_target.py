@@ -8,6 +8,7 @@ from sqlalchemy.types import JSON
 from app.db.base import Base, TimestampMixin
 
 if TYPE_CHECKING:
+    from app.models.cover_letter import CoverLetter
     from app.models.cv_version import CVVersion
     from app.models.user import User
 
@@ -40,6 +41,7 @@ class JobTarget(Base, TimestampMixin):
     user_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(String(50), default="saved", index=True, nullable=False)
     analysis_result: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON_TYPE, nullable=True)
+    clarification_data: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON_TYPE, nullable=True)
 
     # Relationships
     user: Mapped["User"] = relationship(
@@ -48,6 +50,10 @@ class JobTarget(Base, TimestampMixin):
     )
     cv_versions: Mapped[List["CVVersion"]] = relationship(
         "CVVersion",
+        back_populates="job_target",
+    )
+    cover_letters: Mapped[List["CoverLetter"]] = relationship(
+        "CoverLetter",
         back_populates="job_target",
     )
 

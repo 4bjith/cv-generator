@@ -8,6 +8,7 @@ from app.db.base import Base, TimestampMixin
 
 if TYPE_CHECKING:
     from app.models.auth_session import AuthSession
+    from app.models.cover_letter import CoverLetter
     from app.models.cv_version import CVVersion
     from app.models.job_target import JobTarget
     from app.models.profile import CandidateProfile
@@ -71,6 +72,11 @@ class User(Base, TimestampMixin):
     )
     cv_versions: Mapped[List["CVVersion"]] = relationship(
         "CVVersion",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    cover_letters: Mapped[List["CoverLetter"]] = relationship(
+        "CoverLetter",
         back_populates="user",
         cascade="all, delete-orphan",
     )

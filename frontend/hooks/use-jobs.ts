@@ -11,6 +11,13 @@ import {
   JobTargetListResponse,
   JobTargetUpdate,
 } from "@/types/job";
+import {
+  ClarificationAnswerRequest,
+  ClarificationBulkAnswerRequest,
+  ClarificationPromoteRequest,
+  ClarificationSessionResponse,
+} from "@/types/clarification";
+import { CVTailorRequest, CVTailoringResponse } from "@/types/tailoring";
 import { ApiClientError } from "@/lib/api/errors";
 
 export function useJobList(filters?: JobTargetFilters) {
@@ -106,3 +113,102 @@ export function useJobCvVersions(jobId?: string) {
     staleTime: 1000 * 60 * 2,
   });
 }
+
+// ==========================================
+// Clarification Engine Hooks
+// ==========================================
+
+export function useClarificationSession(jobId?: string) {
+  return useQuery<ClarificationSessionResponse, ApiClientError>({
+    queryKey: jobKeys.clarifications(jobId || ""),
+    queryFn: () => jobsApi.getClarifications(jobId!),
+    enabled: Boolean(jobId),
+    staleTime: 1000 * 60 * 2, // 2 minutes
+  });
+}
+
+export function useAnswerClarificationQuestion() {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    ClarificationSessionResponse,
+    ApiClientError,
+    { jobId: string; questionId: string; payload: ClarificationAnswerRequest }
+  >({
+    mutationFn: ({ jobId, questionId, payload }) =>
+      jobsApi.answerClarificationQuestion(jobId, questionId, payload),
+    onSuccess: (data, { jobId }) => {
+      queryClient.setQueryData(jobKeys.clarifications(jobId), data);
+      queryClient.invalidateQueries({ queryKey: jobKeys.detail(jobId) });
+    },
+  });
+}
+
+export function useSkipClarificationQuestion() {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    ClarificationSessionResponse,
+    ApiClientError,
+    { jobId: string; questionId: string }
+  >({
+    mutationFn: ({ jobId, questionId }) =>
+      jobsApi.skipClarificationQuestion(jobId, questionId),
+    onSuccess: (data, { jobId }) => {
+      queryClient.setQueryData(jobKeys.clarifications(jobId), data);
+    },
+  });
+}
+
+export function usePromoteClarification() {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    { status: string; requirement: string },
+    ApiClientError,
+    { jobId: string; questionId: string; payload: ClarificationPromoteRequest }
+  >({
+    mutationFn: ({ jobId, questionId, payload }) =>
+      jobsApi.promoteClarificationAnswer(jobId, questionId, payload),
+    onSuccess: (_, { jobId }) => {
+      queryClient.invalidateQueries({ queryKey: jobKeys.clarifications(jobId) });
+    },
+  });
+}
+
+export function useBulkAnswerClarifications() {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    ClarificationSessionResponse,
+    ApiClientError,
+    { jobId: string; payload: ClarificationBulkAnswerRequest }
+  >({
+    mutationFn: ({ jobId, payload }) =>
+      jobsApi.bulkAnswerClarifications(jobId, payload),
+    onSuccess: (data, { jobId }) => {
+      queryClient.setQueryData(jobKeys.clarifications(jobId), data);
+    },
+  });
+}
+
+// ==========================================
+// Evidence-Grounded AI CV Tailoring Hooks
+// ==========================================
+
+export function useTailorCv() {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    CVTailoringResponse,
+    ApiClientError,
+    { jobId: string; payload?: CVTailorRequest }
+  >({
+    mutationFn: ({ jobId, payload }) => jobsApi.tailorCv(jobId, payload),
+    onSuccess: (data, { jobId }) => {
+      queryClient.invalidateQueries({ queryKey: jobKeys.versions(jobId) });
+      queryClient.invalidateQueries({ queryKey: ["cv"] });
+    },
+  });
+}
+
