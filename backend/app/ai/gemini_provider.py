@@ -17,7 +17,7 @@ T = TypeVar("T", bound=BaseModel)
 class GeminiProvider(AIProviderInterface):
     """
     Google Gemini provider implementing text generation, structured JSON generation, and embeddings.
-    Uses direct HTTPS calls via httpx with exponential backoff and retry handling.
+    Uses direct HTTPS calls via httpx with header-based authentication and transient failure retries.
     """
 
     BASE_URL = "https://generativelanguage.googleapis.com/v1beta"
@@ -32,15 +32,22 @@ class GeminiProvider(AIProviderInterface):
     ) -> None:
         settings = get_settings()
         self.api_key = api_key or getattr(settings, "gemini_api_key", None)
-        self.model_name = model_name or getattr(settings, "gemini_model", "gemini-1.5-flash")
-        self.embedding_model = embedding_model or getattr(settings, "gemini_embedding_model", "text-embedding-004")
+        self.model_name = model_name or getattr(settings, "gemini_model", "gemini-flash-latest")
+        self.embedding_model = embedding_model or getattr(settings, "gemini_embedding_model", "gemini-embedding-001")
         self.timeout = timeout
         self.max_retries = max_retries
 
     def _get_headers(self) -> Dict[str, str]:
-        return {
+        """
+        Build headers with authentication.
+        Uses x-goog-api-key header to prevent credentials from leaking into URLs or proxy logs.
+        """
+        headers = {
             "Content-Type": "application/json",
         }
+        if self.api_key:
+            headers["x-goog-api-key"] = self.api_key
+        return headers
 
     async def generate_text(
         self,
@@ -53,7 +60,8 @@ class GeminiProvider(AIProviderInterface):
         if not self.api_key:
             raise InternalServerError("Gemini API key is not configured in settings or environment.")
 
-        url = f"{self.BASE_URL}/models/{self.model_name}:generateContent?key={self.api_key}"
+        # Clean URL without API key in query string
+        url = f"{self.BASE_URL}/models/{self.model_name}:generateContent"
 
         payload: Dict[str, Any] = {
             "contents": [{"role": "user", "parts": [{"text": prompt}]}],
@@ -80,7 +88,7 @@ class GeminiProvider(AIProviderInterface):
             text_result = "".join(p.get("text", "") for p in parts)
             return text_result.strip()
         except Exception as e:
-            logger.error("Failed to parse Gemini text response", error=str(e), response=response_json)
+            logger.error(f"Failed to parse Gemini text response: {e}")
             raise InternalServerError(f"Gemini response parsing error: {e}")
 
     async def generate_structured(
@@ -94,9 +102,9 @@ class GeminiProvider(AIProviderInterface):
         if not self.api_key:
             raise InternalServerError("Gemini API key is not configured in settings or environment.")
 
-        url = f"{self.BASE_URL}/models/{self.model_name}:generateContent?key={self.api_key}"
+        # Clean URL without API key in query string
+        url = f"{self.BASE_URL}/models/{self.model_name}:generateContent"
 
-        # Request application/json mime type
         payload: Dict[str, Any] = {
             "contents": [{"role": "user", "parts": [{"text": prompt}]}],
             "generationConfig": {
@@ -105,7 +113,6 @@ class GeminiProvider(AIProviderInterface):
             },
         }
 
-        # If schema has model_json_schema, pass it
         if hasattr(schema, "model_json_schema"):
             payload["generationConfig"]["responseSchema"] = schema.model_json_schema()
 
@@ -125,7 +132,7 @@ class GeminiProvider(AIProviderInterface):
             parsed_data = json.loads(raw_text)
             return schema.model_validate(parsed_data)
         except Exception as e:
-            logger.error("Failed to validate Gemini structured output", error=str(e), response=response_json)
+            logger.error(f"Failed to validate Gemini structured output against {schema.__name__}: {e}")
             raise InternalServerError(f"Failed to validate Gemini structured output against {schema.__name__}: {e}")
 
     async def compute_embeddings(
@@ -136,7 +143,8 @@ class GeminiProvider(AIProviderInterface):
         if not self.api_key:
             raise InternalServerError("Gemini API key is not configured in settings or environment.")
 
-        url = f"{self.BASE_URL}/models/{self.embedding_model}:batchEmbedContents?key={self.api_key}"
+        # Clean URL without API key in query string
+        url = f"{self.BASE_URL}/models/{self.embedding_model}:batchEmbedContents"
 
         requests = [
             {
@@ -153,42 +161,71 @@ class GeminiProvider(AIProviderInterface):
             embeddings_data = response_json.get("embeddings", [])
             return [e.get("values", []) for e in embeddings_data]
         except Exception as e:
-            logger.error("Failed to parse Gemini embeddings response", error=str(e))
+            logger.error(f"Failed to parse Gemini embeddings response: {e}")
             raise InternalServerError(f"Failed to parse embeddings: {e}")
 
     async def _send_request(self, url: str, payload: Dict[str, Any]) -> Dict[str, Any]:
-        """Send HTTP POST request with retry and backoff."""
+        """
+        Send HTTP POST request with bounded retries for transient errors.
+        - Retries on HTTP 429 (rate limits) and HTTP 5xx (server errors).
+        - Retries on network timeouts and disconnects.
+        - Never retries non-transient HTTP 400, 401, 403, or 404 client errors.
+        - Never logs API keys or sensitive payload fragments.
+        """
         headers = self._get_headers()
-        last_error: Optional[Exception] = None
+        last_network_error: Optional[Exception] = None
 
         for attempt in range(1, self.max_retries + 1):
             try:
                 async with httpx.AsyncClient(timeout=self.timeout) as client:
                     resp = await client.post(url, headers=headers, json=payload)
+
                     if resp.status_code == 200:
                         return resp.json()
-                    elif resp.status_code == 429:
-                        wait_time = 2.0 ** attempt
-                        logger.warning("Gemini rate limit reached (429), retrying", attempt=attempt, wait_time=wait_time)
-                        await asyncio.sleep(wait_time)
-                        continue
-                    elif resp.status_code >= 500:
-                        wait_time = 1.5 ** attempt
-                        logger.warning("Gemini server error, retrying", status_code=resp.status_code, attempt=attempt)
-                        await asyncio.sleep(wait_time)
-                        continue
-                    else:
-                        resp_text = resp.text
-                        logger.error("Gemini request failed", status_code=resp.status_code, body=resp_text)
-                        raise InternalServerError(f"Gemini API returned status {resp.status_code}: {resp_text}")
-            except httpx.TimeoutException as te:
-                last_error = te
-                logger.warning("Gemini request timed out, retrying", attempt=attempt)
-                await asyncio.sleep(1.0 * attempt)
-            except Exception as exc:
-                last_error = exc
-                if attempt == self.max_retries:
-                    raise InternalServerError(f"Failed to communicate with Gemini API: {exc}")
-                await asyncio.sleep(1.0 * attempt)
 
-        raise InternalServerError(f"Gemini API failed after {self.max_retries} attempts: {last_error}")
+                    elif resp.status_code == 429:
+                        wait_time = min(2.0 ** attempt, 10.0)
+                        logger.warning(
+                            f"Gemini rate limit reached (429), retrying in {wait_time:.1f}s "
+                            f"(attempt {attempt}/{self.max_retries})"
+                        )
+                        await asyncio.sleep(wait_time)
+                        continue
+
+                    elif resp.status_code >= 500:
+                        wait_time = min(1.5 ** attempt, 8.0)
+                        logger.warning(
+                            f"Gemini server error ({resp.status_code}), retrying in {wait_time:.1f}s "
+                            f"(attempt {attempt}/{self.max_retries})"
+                        )
+                        await asyncio.sleep(wait_time)
+                        continue
+
+                    else:
+                        # Non-retryable client errors (400, 401, 403, 404, etc.)
+                        resp_text = resp.text
+                        err_msg = resp_text
+                        try:
+                            err_json = resp.json()
+                            if "error" in err_json and "message" in err_json["error"]:
+                                err_msg = err_json["error"]["message"]
+                        except Exception:
+                            pass
+
+                        logger.error(f"Gemini request failed with status {resp.status_code}: {err_msg}")
+                        raise InternalServerError(f"Gemini API returned status {resp.status_code}: {err_msg}")
+
+            except (httpx.TimeoutException, httpx.NetworkError) as net_err:
+                last_network_error = net_err
+                wait_time = 1.0 * attempt
+                logger.warning(
+                    f"Gemini network {type(net_err).__name__}, retrying in {wait_time:.1f}s "
+                    f"(attempt {attempt}/{self.max_retries})"
+                )
+                if attempt == self.max_retries:
+                    raise InternalServerError(
+                        f"Failed to communicate with Gemini API after {self.max_retries} attempts: {net_err}"
+                    )
+                await asyncio.sleep(wait_time)
+
+        raise InternalServerError(f"Gemini API failed after {self.max_retries} attempts: {last_network_error}")

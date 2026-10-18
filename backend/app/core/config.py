@@ -40,8 +40,8 @@ class Settings(BaseSettings):
 
     # AI & Gemini Provider Settings
     gemini_api_key: Optional[str] = None
-    gemini_model: str = "gemini-1.5-flash"
-    gemini_embedding_model: str = "text-embedding-004"
+    gemini_model: str = "gemini-flash-latest"
+    gemini_embedding_model: str = "gemini-embedding-001"
     ai_provider: str = "auto"  # auto, gemini, mock
 
     # Server binding
@@ -77,6 +77,18 @@ class Settings(BaseSettings):
                 raise ValueError("Insecure or short JWT_SECRET_KEY is not permitted in production/staging environments.")
             if "postgres:postgres@" in self.database_url:
                 raise ValueError("Default database credentials in DATABASE_URL are not permitted in production/staging environments.")
+
+            # AI Provider guardrails for production & staging
+            ai_prov = (self.ai_provider or "auto").lower()
+            if ai_prov == "mock":
+                raise ValueError(
+                    f"AI_PROVIDER='mock' is not permitted in {env} environment. "
+                    "Production must use real AI providers (e.g. 'gemini')."
+                )
+            if ai_prov in ("gemini", "auto") and (not self.gemini_api_key or not self.gemini_api_key.strip()):
+                raise ValueError(
+                    f"GEMINI_API_KEY must be configured in {env} environment when AI_PROVIDER is '{ai_prov}'."
+                )
         return self
 
     @property

@@ -101,7 +101,8 @@ function initialView(): AppView {
 }
 
 export default function Home() {
-  const [view, setView] = useState<AppView>(initialView);
+  const [mounted, setMounted] = useState(false);
+  const [view, setView] = useState<AppView>("landing");
   const [authMode, setAuthMode] = useState<"register" | "login">("register");
   const [, startTransition] = useTransition();
 
@@ -121,6 +122,11 @@ export default function Home() {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   useEffect(() => {
+    setMounted(true);
+    const initial = initialView();
+    if (initial !== "landing") {
+      setView(initial);
+    }
     const handlePopState = () => setView(initialView());
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
@@ -302,8 +308,8 @@ export default function Home() {
     />
   );
 
-  // 1. Initial Session Resolution Loading Screen
-  if (authLoading) {
+  // 1. Initial Session Resolution Loading Screen (only after client mount when session is resolving)
+  if (mounted && authLoading) {
     return (
       <>
         <AuthSkeleton />
@@ -312,8 +318,8 @@ export default function Home() {
     );
   }
 
-  // 2. Landing Page
-  if (view === "landing") {
+  // 2. Landing Page (default for SSR and pre-mount initial render)
+  if (!mounted || view === "landing") {
     return (
       <>
         <Suspense fallback={<LandingSkeleton />}>

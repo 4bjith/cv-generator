@@ -29,7 +29,7 @@ class MockAIProvider(AIProviderInterface):
         max_tokens: Optional[int] = None,
     ) -> str:
         """Deterministic text generation tailored to common CV generation prompts."""
-        logger.debug("MockAIProvider generating text for prompt snippet", prompt_snippet=prompt[:80])
+        logger.debug(f"MockAIProvider generating text for prompt snippet: {prompt[:80]}")
 
         prompt_lower = prompt.lower()
         if "summary" in prompt_lower or "professional summary" in prompt_lower:
@@ -56,7 +56,7 @@ class MockAIProvider(AIProviderInterface):
         temperature: float = 0.1,
     ) -> T:
         """Generate structured Pydantic object deterministically based on schema fields."""
-        logger.debug("MockAIProvider generating structured output", schema_name=schema.__name__)
+        logger.debug(f"MockAIProvider generating structured output for schema: {schema.__name__}")
 
         # Specialized handling for StructuredTailoringOutput
         if schema.__name__ == "StructuredTailoringOutput":

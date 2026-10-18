@@ -1,7 +1,7 @@
 # AI CV Maker — Development Memory
 
 **Last updated:** 2026-10-18  
-**Project status:** Phase 7 (Evidence-Grounded Cover Letter Generation) complete; all 95 backend and 99 frontend tests passing with 0 TypeScript errors.
+**Project status:** Phase 7 complete; AI configuration hardened with header authentication, transient retry policy, production mock prohibition, and safe readiness observability; 109 backend and 99 frontend tests passing with 0 TypeScript errors.
 
 ## Purpose
 
@@ -66,7 +66,7 @@ Generated content must be truthful, ATS-friendly, editable, versioned, and trace
 | Interview preparation | Not started | Job-specific technical, project, experience, behavioral, and company questions. |
 | Application tracker | Not started | Status history, notes, dates, job data, and document versions. |
 | Versioning and auditability | Complete | Point-in-time immutable CV snapshots, non-mutating source profiles, duplicate generation protection, and version-specific presentation settings. |
-| Testing and production hardening | Complete | 95/95 backend pytest tests passing, 99/99 frontend vitest tests passing, 0 TypeScript errors, production build verified. |
+| Testing and production hardening | Complete | 109/109 backend pytest tests passing, 99/99 frontend vitest tests passing, 0 TypeScript errors, production build verified. |
 
 ## Recommended implementation order
 
@@ -481,5 +481,30 @@ If a feature is only partially complete, keep it marked `In progress` and list t
   - Frontend: **99/99 tests passing** (`vitest`) across 17 test suites including 9 comprehensive Phase 7 test cases in `__tests__/cover-letter.test.ts`.
   - Type Safety: TypeScript compiler completed with **0 errors** (`npx tsc --noEmit`).
   - Production Build: Next.js Turbopack build compiled successfully with **0 errors** and static page prerendering.
+
+### 2026-10-18 — AI Configuration Hardening & Production Reliability
+
+- **Header-Based Authentication & Credential Secrecy (`backend/app/ai/gemini_provider.py`)**:
+  - Replaced URL query string `?key={api_key}` with `x-goog-api-key` HTTP request header across all generation, structured-output, and embedding requests.
+  - Request URLs are now clean (`https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent`), completely eliminating credential leakage in HTTP access logs, proxy traces, and exception traces.
+- **Logging Bug & Error Masking Remediation**:
+  - Replaced unsupported arbitrary logging keyword arguments (`status_code=...`, `model=...`, `error=...`) with standard f-strings and standard logging formatting.
+  - Eliminated `TypeError: Logger._log()` crashes that previously masked underlying API errors.
+- **Bounded Retry Policy**:
+  - Bounded retries (with exponential backoff) applied strictly to transient failures: HTTP 429 (rate limits), HTTP 5xx (server errors), and network timeouts/disconnects.
+  - Immediate failure on non-transient HTTP client errors (400, 401, 403, 404) without useless retries or backoff delays.
+- **Production Guardrails & Fail-Fast Validation (`backend/app/core/config.py`, `backend/app/ai/factory.py`)**:
+  - In `production` and `staging` environments, `Settings` validation prohibits `AI_PROVIDER='mock'` and disallows silent mock fallback when `AI_PROVIDER='auto'`.
+  - When `AI_PROVIDER='gemini'` is explicitly selected, the factory fails fast with an explicit configuration error if `GEMINI_API_KEY` is missing or empty.
+  - Added `clear_ai_provider_cache()` to factory to prevent cached provider singletons from retaining stale configuration across test or environment reconfigurations.
+- **Safe Readiness Observability (`backend/app/schemas/common.py`, `backend/app/api/routes/health.py`)**:
+  - Extended `/api/v1/health/ready` response to include safe, non-sensitive AI metadata (`provider`, `model`, `embedding_model`, `configured`), allowing operators to observe AI status without exposing secret credentials.
+- **Environment Documentation (`backend/.env.example`)**:
+  - Documented `AI_PROVIDER` options (`auto`, `gemini`, `mock`), `GEMINI_API_KEY`, `GEMINI_MODEL`, and `GEMINI_EMBEDDING_MODEL` with setup instructions.
+- **Standalone Smoke-Test Utility (`backend/scripts/verify_gemini.py`)**:
+  - CLI script to safely test live Gemini connectivity using header auth and sanitized output without modifying application data.
+- **Automated Tests**:
+  - Backend: **109/109 tests passing** (`pytest`) with 14 new dedicated test cases in `tests/test_ai_configuration.py` covering header auth, retry policies, production safeguards, and safe health metadata.
+  - Frontend: **99/99 tests passing** (`vitest`).
 
 

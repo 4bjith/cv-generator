@@ -39,3 +39,7 @@ class HealthReadyResponse(BaseModel):
         default_factory=lambda: {"application": "ok"},
         description="Dictionary of individual component health statuses",
     )
+    ai: Optional[dict[str, Any]] = Field(
+        default=None,
+        description="Safe, non-sensitive AI provider configuration metadata",
+    )

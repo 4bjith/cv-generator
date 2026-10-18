@@ -15,10 +15,11 @@ import {
  * Hook to retrieve and subscribe to the currently authenticated user's server state.
  */
 export function useCurrentUser() {
-  const [hasTokenState, setHasTokenState] = useState(() => tokenStorage.hasTokens());
+  const [hasTokenState, setHasTokenState] = useState(false);
 
-  // Listen to token changes across components/tabs
+  // Listen to token changes across components/tabs and sync on mount
   useEffect(() => {
+    setHasTokenState(tokenStorage.hasTokens());
     return tokenStorage.subscribe(() => {
       setHasTokenState(tokenStorage.hasTokens());
     });
