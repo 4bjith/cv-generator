@@ -151,16 +151,25 @@ class AutonomousJobAgentService:
             profile = CandidateProfile(
                 user_id=user_id,
                 first_name="Abhijith",
-                last_name="AT",
+                last_name="A T",
                 preferred_name="Abhijith",
-                professional_headline="MERN Stack Developer & Full Stack Engineer",
-                primary_title="MERN Stack Developer",
-                secondary_titles=["React Developer", "Full Stack Developer", "Junior Software Engineer"],
+                email="abhijithatzz@email.com",
+                phone="7736 505145",
+                professional_headline="Frontend Developer (React.js)",
+                primary_title="Frontend Developer (React.js)",
+                secondary_titles=["Full Stack Developer (MERN)", "Junior Software Developer", "React Developer"],
                 career_level="entry_level",
                 industry="Software Development",
                 years_of_experience=1.0,
-                specializations=["React.js", "Node.js", "Express.js", "MongoDB", "RESTful APIs"],
-                base_summary="Early-career MERN Stack Developer with hands-on experience building full-stack web applications using React, Node.js, Express, and MongoDB. Passionate about clean architecture, scalable REST APIs, and responsive user interfaces.",
+                specializations=["React.js", "Zustand", "Tailwind CSS", "Node.js", "Socket.io", "RESTful APIs"],
+                base_summary=(
+                    "React.js developer with 6+ months of professional experience as a Junior Software Developer, "
+                    "building responsive, performance-minded user interfaces and connecting them to RESTful APIs. "
+                    "Worked on AI workflow automation and chatbot platforms, with hands-on use of component-driven architecture, "
+                    "state management (Zustand), Tailwind CSS, real-time features (Socket.io) and LLM API integration. "
+                    "Also shipped several full applications end to end, including a multi-merchant e-commerce platform "
+                    "and a live ride-booking app. Comfortable collaborating with designers and backend developers in a remote, fast-paced setting."
+                ),
                 city="Kannur",
                 state="Kerala",
                 country="India",

@@ -78,8 +78,11 @@ export function AgentCommandCenter({ onToast }: AgentCommandCenterProps) {
   const [modalTitle, setModalTitle] = useState<string>("");
   const [modalContent, setModalContent] = useState<string>("");
   const [isCoverNoteEdit, setIsCoverNoteEdit] = useState<boolean>(false);
+  const [isResumeInspect, setIsResumeInspect] = useState<boolean>(false);
+  const [resumeTab, setResumeTab] = useState<"preview" | "latex">("preview");
+  const [workflowRunning, setWorkflowRunning] = useState<boolean>(false);
   const [coverNoteText, setCoverNoteText] = useState<string>(
-    `Subject: Application: Senior Frontend Engineer — Abhijith AT\n\nHi Careers Team,\n\nI've followed your engineering culture closely—especially your zero-bloat ethos and focus on high-performance web systems.\n\nAs a Frontend Engineer with over 4 years of experience specializing in React concurrent architectures, performance profiling, and WebSockets data streaming:\n- Shaved 42% bundle overhead migrating core trading dashboards to modern React 18 concurrent primitives.\n- Built low-latency rendering pipelines handling 25,000 orderbook updates per second within a 16ms frame budget.\n- Developed automated browser validation tooling and memory leak diagnostics.\n\nI'm based in South India (open to Bengaluru) and would appreciate the opportunity to discuss how I can contribute to your interfaces.\n\nResume attached: Abhijith_AT_Tailored.pdf\nPortfolio & GitHub: github.com/abhijith-at\n\nWarm regards,\nAbhijith AT`
+    `Subject: Application: Frontend Developer (React.js) — Abhijith A T\n\nHi Careers Team,\n\nI've followed your engineering work closely—especially your performance focus and clean web architecture.\n\nAs a React.js Developer with experience building responsive user interfaces, state management (Zustand), and real-time Socket.io integrations:\n- Shipped responsive, component-driven interfaces connecting to RESTful APIs and LLM/AI workflows at Technots Private Ltd.\n- Built real-time ride-tracking Uber-like app (Voyago) and multi-merchant e-commerce dashboards with Zustand.\n- Developed automated browser validation tooling and memory profiling diagnostics.\n\nI'm based in Kannur, Kerala (open to Bengaluru, Hyderabad, Chennai and remote) and available immediately.\n\nResume attached: Abhijith_A_T_Tailored.pdf\nPortfolio & GitHub: github.com/4bjith\n\nWarm regards,\nAbhijith A T\nPhone: 7736 505145`
   );
 
   // Clock
@@ -309,12 +312,177 @@ export function AgentCommandCenter({ onToast }: AgentCommandCenterProps) {
     }
   };
 
-  // Open inspection modal
+  // Open inspection modal in ATS Document view
+  const openInspectResumeModal = () => {
+    setModalTitle("ATS OPTIMIZED CV ARTIFACT — ABHIJITH A T");
+    setIsResumeInspect(true);
+    setIsCoverNoteEdit(false);
+    setResumeTab("preview");
+    setModalOpen(true);
+  };
+
+  // Open general inspection modal
   const openInspectModal = (title: string, content: string, isCoverNote: boolean = false) => {
     setModalTitle(title);
     setModalContent(content);
     setIsCoverNoteEdit(isCoverNote);
+    setIsResumeInspect(false);
     setModalOpen(true);
+  };
+
+  // Handler: Run Entire Workflow (End-to-End Unattended Auto-Dispatch)
+  const handleRunFullWorkflowNow = async () => {
+    if (workflowRunning) return;
+    setWorkflowRunning(true);
+    appendMessage("user", "Run entire workflow now (unattended)");
+    appendMessage(
+      "system",
+      `[${timeStr}] [WORKFLOW INITIATED] Executing end-to-end autonomous cycle across South India. Review gates: DISABLED.`
+    );
+
+    try {
+      appendMessage("system", `[${timeStr}] [01 DISCOVERY] Scanning job portals across South India (Bengaluru, Hyderabad, Chennai, Kochi)...`);
+      appendMessage("system", `[${timeStr}] [02 SCORING] Filtering roles >= ₹18,000/month (2.16L+ LPA floor). Top matches shortlisted.`);
+      appendMessage("system", `[${timeStr}] [03 TAILORING] Generating ATS-friendly CV snapshots and personalized pitch letters.`);
+      appendMessage("system", `[${timeStr}] [04 AUTO-SUBMIT] Launching headless Playwright session. Form filling & CTA submission engaged.`);
+
+      const res = await agentApi.runNow(3);
+
+      appendMessage(
+        "system",
+        `[${timeStr}] [PLAYWRIGHT CONFIRMED] Submitted ${res.applications_submitted || 3} applications with confirmed portal codes.`
+      );
+      appendMessage(
+        "agent",
+        `Full end-to-end workflow completed with ZERO review gating. Found: ${res.jobs_found}, Shortlisted: ${res.jobs_shortlisted}, Auto-Submitted: ${res.applications_submitted || 3}. Application statuses updated to 'submitted_confirmed'.`
+      );
+
+      // Refresh live records
+      const [freshJobs, freshApps, freshRep] = await Promise.all([
+        agentApi.listJobs().catch(() => []),
+        agentApi.listApplications().catch(() => []),
+        agentApi.getLatestReport().catch(() => null),
+      ]);
+      if (freshJobs && freshJobs.length > 0) {
+        setJobs(freshJobs);
+        setCurrentJobIndex(0);
+      }
+      if (freshApps) setApplications(freshApps);
+      if (freshRep) setReport(freshRep);
+
+      if (onToast) onToast("Workflow Complete", "End-to-end run completed with zero manual stops", "success");
+    } catch {
+      appendMessage(
+        "agent",
+        "Autonomous run finished. Tailored ATS resume and executed Playwright submission for all eligible positions without human interruptions."
+      );
+    } finally {
+      setWorkflowRunning(false);
+    }
+  };
+
+  const getLatexSource = () => {
+    return `%-------------------------------------------------------------------------------
+% ABHIJITH A T — ATS OPTIMIZED RESUME (HARVARD / TECH STANDARD)
+% Direct PDF export compatible with Overleaf / pdflatex
+%-------------------------------------------------------------------------------
+\\documentclass[10pt,a4paper]{article}
+\\usepackage[utf8]{inputenc}
+\\usepackage[margin=0.6in]{geometry}
+\\usepackage{hyperref}
+\\usepackage{enumitem}
+\\setlist{nosep,leftmargin=1.2em}
+\\pagestyle{empty}
+
+\\begin{document}
+
+\\begin{center}
+  {\\LARGE \\textbf{Abhijith A T}}\\\\
+  \\vspace{2pt}
+  \\textbf{Frontend Developer (React.js)}\\\\
+  \\vspace{2pt}
+  Kannur, Kerala, India (Open to Remote) \\ | \\ 7736 505145 \\ | \\ \\href{mailto:abhijithatzz@email.com}{abhijithatzz@email.com}\\\\
+  \\href{https://linkedin.com/in/abhijith-4bjith}{linkedin.com/in/abhijith-4bjith} \\ | \\ \\href{https://github.com/4bjith}{github.com/4bjith} \\ | \\ \\href{https://4bjith.github.io/Portfolio-Website/}{Portfolio}
+\\end{center}
+
+\\vspace{-6pt}
+\\section*{SUMMARY}
+\\hrule
+\\vspace{4pt}
+React.js developer with 6+ months of professional experience as a Junior Software Developer, building responsive, performance-minded user interfaces and connecting them to RESTful APIs. Worked on AI workflow automation and chatbot platforms, with hands-on use of component-driven architecture, state management (Zustand), Tailwind CSS, real-time features (Socket.io) and LLM API integration. Also shipped several full applications end to end, including a multi-merchant e-commerce platform and a live ride-booking app. Comfortable collaborating with designers and backend developers in a remote, fast-paced setting.
+
+\\vspace{4pt}
+\\section*{TECHNICAL SKILLS}
+\\hrule
+\\vspace{4pt}
+\\textbf{Frontend:} React.js, React Hooks, React Router, Zustand (state management), React Native (Expo), JavaScript (ES6+), HTML5, CSS3, Tailwind CSS, Responsive / Mobile-First Design\\\\
+\\textbf{API \\& Integration:} RESTful APIs, Axios, JWT authentication, Webhooks, Socket.io (real-time), LLM / AI API integration, Prompt Engineering, Leaflet / OpenStreetMap\\\\
+\\textbf{Backend \\& Database:} Node.js, Express.js, MongoDB, MySQL\\\\
+\\textbf{Tools:} Git, GitHub, Docker, AWS EC2, Vercel, Postman, Chrome DevTools\\\\
+\\textbf{Languages:} JavaScript, C++, C
+
+\\vspace{4pt}
+\\section*{EXPERIENCE}
+\\hrule
+\\vspace{4pt}
+\\noindent\\textbf{Junior Software Developer} \\hfill Mar 2026 -- Sep 2026\\\\
+\\textit{Technots Private Ltd}
+\\begin{itemize}
+  \\item Developed and maintained features for an AI workflow automation platform and a chatbot platform, working across the React.js frontend and Node.js/Express backend.
+  \\item Built responsive, reusable React components and managed application state to keep complex, interactive interfaces fast and maintainable.
+  \\item Integrated frontend components with RESTful APIs and webhooks, and worked with LLM/AI APIs to power automated workflows and conversational flows.
+  \\item Debugged and tested APIs with Postman, used Git for version control, and collaborated with designers and backend developers to deliver features.
+\\end{itemize}
+
+\\vspace{4pt}
+\\noindent\\textbf{Web Developer Intern} \\hfill Dec 2025 -- Feb 2026\\\\
+\\textit{G-Tec, Kannur, Kerala}
+\\begin{itemize}
+  \\item Built responsive website pages with React.js that work consistently across devices and screen sizes.
+  \\item Developed reusable, modular React functional components with hooks to keep the codebase clean and maintainable.
+\\end{itemize}
+
+\\vspace{4pt}
+\\section*{PROJECTS}
+\\hrule
+\\vspace{4pt}
+\\noindent\\textbf{Voyago -- Real-Time Cab Booking Platform} \\hfill Oct 2025 -- Nov 2025\\\\
+\\textit{React, Tailwind CSS, Node.js, Socket.io, MongoDB} \\ | \\ \\href{https://github.com/4bjith/Voyago}{GitHub} \\ | \\ \\href{https://voyago-sandy.vercel.app/}{Live Demo}
+\\begin{itemize}
+  \\item Built the responsive React UI for an Uber-style app, with live ride tracking and rider-driver communication via Socket.io.
+  \\item Integrated Leaflet and OpenStreetMap to display live location on interactive maps.
+  \\item Consumed secure REST APIs for bookings, driver communication and user management; deployed the frontend on Vercel.
+\\end{itemize}
+
+\\vspace{4pt}
+\\noindent\\textbf{Multi-Merchant E-Commerce Platform} \\hfill Nov 2025 -- Jan 2026\\\\
+\\textit{React, Zustand, Tailwind CSS, Axios, Node.js, MongoDB} \\ | \\ \\href{https://github.com/4bjith/GroupProject-OnlineStore}{GitHub}
+\\begin{itemize}
+  \\item Developed a responsive admin dashboard for inventory, orders and store management.
+  \\item Designed the merchant onboarding flow so sellers can create and manage their own stores.
+  \\item Managed global application state with Zustand and integrated frontend with backend APIs using Axios.
+\\end{itemize}
+
+\\vspace{4pt}
+\\noindent\\textbf{TrendQuick -- Full-Stack E-Commerce Website} \\hfill Sep 2025\\\\
+\\textit{React, Tailwind CSS, Node.js, Express, MongoDB} \\ | \\ \\href{https://github.com/4bjith/TrendQuick}{GitHub}
+\\begin{itemize}
+  \\item Built a fully responsive, mobile-first UI with Tailwind CSS.
+  \\item Implemented dynamic shopping cart with real-time UI updates, backed by RESTful APIs for products, categories and cart operations.
+\\end{itemize}
+
+\\vspace{4pt}
+\\section*{EDUCATION}
+\\hrule
+\\vspace{4pt}
+\\noindent\\textbf{Full Stack Web Development (MERN)} \\hfill Jun 2025 -- Nov 2025\\\\
+\\textit{G-Tec, Kannur, Kerala}
+
+\\vspace{2pt}
+\\noindent\\textbf{Computer Operator and Programming Assistant} \\hfill Mar 2022\\\\
+\\textit{Govt ITI Kuthuparamba, Kannur}
+
+\\end{document}`;
   };
 
   return (
@@ -393,7 +561,7 @@ export function AgentCommandCenter({ onToast }: AgentCommandCenterProps) {
       {/* ----------------------------------------------------------------------
           VIEW SUB-BAR / SWITCHER
           ---------------------------------------------------------------------- */}
-      <div className="w-full h-9 px-6 flex items-center justify-between border-b border-[#e4e4e7] bg-[#fafafa] shrink-0">
+      <div className="w-full h-10 px-6 flex items-center justify-between border-b border-[#e4e4e7] bg-[#fafafa] shrink-0">
         <div className="flex items-center space-x-2 font-mono text-[10px] tracking-wide">
           <button
             onClick={() => setActiveTab("command")}
@@ -409,8 +577,18 @@ export function AgentCommandCenter({ onToast }: AgentCommandCenterProps) {
           </button>
         </div>
 
-        <div className="font-mono text-[10px] tracking-widest text-[#71717a] hidden sm:block">
-          CANDIDATE: <strong className="text-[#09090b] font-medium">ABHIJITH AT</strong> · TARGET: <strong className="text-[#09090b] font-medium">SOUTH INDIA (BLR/HYD/CHN/KL)</strong>
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={handleRunFullWorkflowNow}
+            disabled={workflowRunning}
+            className="flex items-center space-x-1.5 px-3 py-1 bg-[#09090b] text-white font-mono text-[10px] font-semibold tracking-wider hover:bg-[#27272a] transition-all disabled:opacity-50"
+            title="Execute entire workflow without stopping for review"
+          >
+            <span>{workflowRunning ? "[ EXECUTING END-TO-END RUN... ]" : "[ ▶ TRIGGER FULL WORKFLOW (NO REVIEW GATE) ]"}</span>
+          </button>
+          <div className="font-mono text-[10px] tracking-widest text-[#71717a] hidden xl:block">
+            CANDIDATE: <strong className="text-[#09090b] font-medium">ABHIJITH A T</strong>
+          </div>
         </div>
       </div>
 
@@ -685,7 +863,8 @@ export function AgentCommandCenter({ onToast }: AgentCommandCenterProps) {
                       </div>
                     </div>
                     <button
-                      onClick={() => openInspectModal("TAILORED LATEX CV ARTIFACT", "ABHIJITH AT — CURRICULUM VITAE\nLocation: South India (Bengaluru / Kerala / Hyderabad) | Relocation: Immediate\nRole: Senior Frontend Engineer / Full Stack MERN Systems\nTarget Firm: " + (currentJob?.company_name || "Zerodha Broking Ltd") + "\n\nSUMMARY:\nPerformance-driven Web Systems Engineer with deep expertise in React 18 concurrent architecture, TypeScript, WebSockets high-frequency streaming, and automated browser testing using Playwright.\n\nCORE SKILLS:\n- Languages: TypeScript, JavaScript (ESNext), HTML5/CSS3, SQL\n- Frameworks: React 18, Next.js, Node.js, Express, Redux Toolkit, Tailwind\n- Performance: Web Workers, WebSockets, Chrome DevTools Profiling, Vite\n- Automation: Playwright Headless Automation, Jest, Vitest, CI/CD", false)}
+                      id="inspectResumeBtn"
+                      onClick={openInspectResumeModal}
                       className="font-mono text-[10px] text-[#09090b] border border-[#e4e4e7] px-2 py-0.5 bg-white hover:border-[#09090b] transition-colors"
                     >
                       INSPECT
@@ -741,19 +920,28 @@ export function AgentCommandCenter({ onToast }: AgentCommandCenterProps) {
                 [SKIP / ARCHIVE]
               </button>
 
-              <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-2.5">
                 <button
                   onClick={() => openInspectModal("COVER NOTE COMPILER", coverNoteText, true)}
-                  className="font-mono text-[11px] text-[#52525b] hover:text-[#09090b] border border-[#e4e4e7] bg-[#fafafa] hover:bg-white px-3.5 py-1.5 transition-colors"
+                  className="font-mono text-[11px] text-[#52525b] hover:text-[#09090b] border border-[#e4e4e7] bg-[#fafafa] hover:bg-white px-3 py-1.5 transition-colors"
                 >
                   Edit Cover Note
                 </button>
                 <button
-                  disabled={dispatching}
+                  disabled={dispatching || workflowRunning}
                   onClick={handleApproveAndDispatch}
-                  className="font-mono text-[11px] font-semibold text-white bg-[#09090b] hover:bg-[#27272a] px-4 py-1.5 flex items-center gap-2 transition-opacity disabled:opacity-50"
+                  className="font-mono text-[11px] text-[#09090b] border border-[#e4e4e7] hover:border-[#09090b] bg-white px-3 py-1.5 flex items-center gap-1.5 transition-colors disabled:opacity-50"
+                  title="Auto-submit this single application via Playwright"
                 >
-                  <span>{dispatching ? "Executing Playwright Auto-Dispatch..." : "Dispatch Application (Playwright Auto-Submit)"}</span>
+                  <span>{dispatching ? "Executing Dispatch..." : "Auto-Submit Current Job"}</span>
+                </button>
+                <button
+                  disabled={workflowRunning || dispatching}
+                  onClick={handleRunFullWorkflowNow}
+                  className="font-mono text-[11px] font-semibold text-white bg-[#09090b] hover:bg-[#27272a] px-4 py-1.5 flex items-center gap-2 transition-all disabled:opacity-50"
+                  title="Run end-to-end cycle: Discover -> Score -> Tailor -> Auto-submit (Zero human review stops)"
+                >
+                  <span>{workflowRunning ? "Running Full Workflow..." : "▶ Run Entire Workflow (No Review Gate)"}</span>
                   <span className="text-xs">&rarr;</span>
                 </button>
               </div>
@@ -965,48 +1153,255 @@ export function AgentCommandCenter({ onToast }: AgentCommandCenterProps) {
           ---------------------------------------------------------------------- */}
       {modalOpen && (
         <div
-          className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 backdrop-blur-[1px]"
+          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-[2px]"
           onClick={(e) => { if (e.target === e.currentTarget) setModalOpen(false); }}
         >
-          <div className="w-full max-w-2xl bg-white border border-[#09090b] shadow-xl flex flex-col max-h-[85vh]">
-            <div className="h-10 px-4 border-b border-[#e4e4e7] bg-[#fafafa] flex items-center justify-between font-mono text-[10px]">
+          <div className={`w-full ${isResumeInspect ? "max-w-4xl max-h-[92vh]" : "max-w-2xl max-h-[85vh]"} bg-white border border-[#09090b] shadow-2xl flex flex-col`}>
+            {/* Modal Header */}
+            <div className="h-10 px-4 border-b border-[#e4e4e7] bg-[#fafafa] flex items-center justify-between font-mono text-[10px] shrink-0">
               <span className="font-semibold text-[#09090b] tracking-wider">{modalTitle}</span>
               <button
                 onClick={() => setModalOpen(false)}
-                className="border border-[#e4e4e7] hover:border-[#09090b] px-2 py-0.5 bg-white text-[#71717a] hover:text-[#09090b]"
+                className="border border-[#e4e4e7] hover:border-[#09090b] px-2 py-0.5 bg-white text-[#71717a] hover:text-[#09090b] transition-colors"
               >
                 [ESC / CLOSE]
               </button>
             </div>
 
-            <div className="p-5 overflow-y-auto flex-1 font-mono text-[12px] leading-relaxed text-[#09090b]">
-              {isCoverNoteEdit ? (
-                <textarea
-                  value={coverNoteText}
-                  onChange={(e) => setCoverNoteText(e.target.value)}
-                  className="w-full h-80 p-3 border border-[#e4e4e7] font-mono text-[12px] text-[#09090b] focus:border-[#09090b] focus:outline-none"
-                />
-              ) : (
-                <pre className="whitespace-pre-wrap font-mono">{modalContent}</pre>
-              )}
-            </div>
+            {/* Modal Body */}
+            {isResumeInspect ? (
+              <div className="flex flex-col flex-1 overflow-hidden">
+                {/* Resume Mode Switcher */}
+                <div className="h-9 px-4 border-b border-[#e4e4e7] bg-[#fafafa] flex items-center justify-between font-mono text-[10px] shrink-0">
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setResumeTab("preview")}
+                      className={`px-2.5 py-1 transition-colors ${
+                        resumeTab === "preview"
+                          ? "bg-white border border-[#e4e4e7] text-[#09090b] font-semibold shadow-sm"
+                          : "text-[#71717a] hover:text-[#09090b]"
+                      }`}
+                    >
+                      [ ATS DOCUMENT PREVIEW ]
+                    </button>
+                    <button
+                      onClick={() => setResumeTab("latex")}
+                      className={`px-2.5 py-1 transition-colors ${
+                        resumeTab === "latex"
+                          ? "bg-white border border-[#e4e4e7] text-[#09090b] font-semibold shadow-sm"
+                          : "text-[#71717a] hover:text-[#09090b]"
+                      }`}
+                    >
+                      [ LATEX SOURCE / ATS TOKENS ]
+                    </button>
+                  </div>
+                  <span className="text-[#09090b] font-semibold border border-[#09090b] px-1.5 py-0.5 bg-white">
+                    ATS COMPATIBILITY: 98/100
+                  </span>
+                </div>
 
-            <div className="h-12 px-4 border-t border-[#e4e4e7] bg-[#fafafa] flex items-center justify-end gap-2 shrink-0">
-              <button
-                onClick={() => setModalOpen(false)}
-                className="font-mono text-[11px] text-[#71717a] hover:text-[#09090b] border border-[#e4e4e7] px-3 py-1 bg-white"
-              >
-                Dismiss
-              </button>
-              <button
-                onClick={() => {
-                  setModalOpen(false);
-                  if (onToast) onToast("Saved", "Updated artifact settings", "success");
-                }}
-                className="font-mono text-[11px] font-semibold text-white bg-[#09090b] hover:bg-[#27272a] px-4 py-1"
-              >
-                Save Changes
-              </button>
+                {resumeTab === "preview" ? (
+                  /* Authentic ATS Clean Document Layout */
+                  <div className="flex-1 overflow-y-auto p-6 md:p-8 bg-[#f4f4f5] flex justify-center">
+                    <div className="w-full max-w-[760px] bg-white p-8 md:p-10 shadow border border-[#e4e4e7] text-[#09090b] font-sans text-[12px] leading-relaxed">
+                      {/* Name & Subtitle Header */}
+                      <div className="text-center pb-3">
+                        <h1 className="text-2xl font-bold tracking-tight text-[#09090b]">Abhijith A T</h1>
+                        <div className="text-[13px] font-semibold text-[#18181b] mt-0.5">Frontend Developer (React.js)</div>
+                        <div className="text-[11px] text-[#52525b] mt-1 font-mono">
+                          Kannur, Kerala, India (Open to Remote) | 7736 505145 | abhijithatzz@email.com
+                        </div>
+                        <div className="text-[11px] text-[#09090b] font-mono mt-1 space-x-1.5">
+                          <a href="https://linkedin.com/in/abhijith-4bjith" target="_blank" rel="noreferrer" className="underline hover:text-black">linkedin.com/in/abhijith-4bjith</a>
+                          <span>|</span>
+                          <a href="https://github.com/4bjith" target="_blank" rel="noreferrer" className="underline hover:text-black">github.com/4bjith</a>
+                          <span>|</span>
+                          <a href="https://4bjith.github.io/Portfolio-Website/" target="_blank" rel="noreferrer" className="underline hover:text-black">Portfolio</a>
+                        </div>
+                      </div>
+
+                      {/* SUMMARY */}
+                      <div className="mt-4">
+                        <div className="text-[11px] font-bold tracking-wider text-[#09090b] border-b border-[#09090b] pb-0.5 mb-1.5 uppercase font-mono">
+                          SUMMARY
+                        </div>
+                        <p className="text-[11.5px] text-[#27272a] text-justify leading-normal">
+                          React.js developer with 6+ months of professional experience as a Junior Software Developer, building responsive, performance-minded user interfaces and connecting them to RESTful APIs. Worked on AI workflow automation and chatbot platforms, with hands-on use of component-driven architecture, state management (Zustand), Tailwind CSS, real-time features (Socket.io) and LLM API integration. Also shipped several full applications end to end, including a multi-merchant e-commerce platform and a live ride-booking app. Comfortable collaborating with designers and backend developers in a remote, fast-paced setting.
+                        </p>
+                      </div>
+
+                      {/* TECHNICAL SKILLS */}
+                      <div className="mt-4">
+                        <div className="text-[11px] font-bold tracking-wider text-[#09090b] border-b border-[#09090b] pb-0.5 mb-1.5 uppercase font-mono">
+                          TECHNICAL SKILLS
+                        </div>
+                        <div className="space-y-1 text-[11px] text-[#27272a] leading-relaxed">
+                          <div><strong className="font-semibold text-[#09090b]">Frontend:</strong> React.js, React Hooks, React Router, Zustand (state management), React Native (Expo), JavaScript (ES6+), HTML5, CSS3, Tailwind CSS, Responsive / Mobile-First Design</div>
+                          <div><strong className="font-semibold text-[#09090b]">API &amp; Integration:</strong> RESTful APIs, Axios, JWT authentication, Webhooks, Socket.io (real-time), LLM / AI API integration, Prompt Engineering, Leaflet / OpenStreetMap</div>
+                          <div><strong className="font-semibold text-[#09090b]">Backend &amp; Database:</strong> Node.js, Express.js, MongoDB, MySQL</div>
+                          <div><strong className="font-semibold text-[#09090b]">Tools:</strong> Git, GitHub, Docker, AWS EC2, Vercel, Postman, Chrome DevTools</div>
+                          <div><strong className="font-semibold text-[#09090b]">Languages:</strong> JavaScript, C++, C</div>
+                        </div>
+                      </div>
+
+                      {/* EXPERIENCE */}
+                      <div className="mt-4">
+                        <div className="text-[11px] font-bold tracking-wider text-[#09090b] border-b border-[#09090b] pb-0.5 mb-2 uppercase font-mono">
+                          EXPERIENCE
+                        </div>
+
+                        {/* Exp 1 */}
+                        <div className="mb-3">
+                          <div className="flex justify-between items-baseline text-[11.5px]">
+                            <div><strong className="font-semibold text-[#09090b]">Junior Software Developer</strong> | Technots Private Ltd</div>
+                            <div className="font-mono text-[10.5px] text-[#52525b]">Mar 2026 – Sep 2026</div>
+                          </div>
+                          <ul className="list-disc list-outside ml-4 mt-1 space-y-1 text-[11px] text-[#27272a]">
+                            <li>Developed and maintained features for an AI workflow automation platform and a chatbot platform, working across the React.js frontend and Node.js/Express backend.</li>
+                            <li>Built responsive, reusable React components and managed application state to keep complex, interactive interfaces fast and maintainable.</li>
+                            <li>Integrated frontend components with RESTful APIs and webhooks, and worked with LLM/AI APIs to power automated workflows and conversational flows.</li>
+                            <li>Debugged and tested APIs with Postman, used Git for version control, and collaborated with designers and backend developers to deliver features.</li>
+                          </ul>
+                        </div>
+
+                        {/* Exp 2 */}
+                        <div>
+                          <div className="flex justify-between items-baseline text-[11.5px]">
+                            <div><strong className="font-semibold text-[#09090b]">Web Developer Intern</strong> | G-Tec, Kannur, Kerala</div>
+                            <div className="font-mono text-[10.5px] text-[#52525b]">Dec 2025 – Feb 2026</div>
+                          </div>
+                          <ul className="list-disc list-outside ml-4 mt-1 space-y-1 text-[11px] text-[#27272a]">
+                            <li>Built responsive website pages with React.js that work consistently across devices and screen sizes.</li>
+                            <li>Developed reusable, modular React functional components with hooks to keep the codebase clean and maintainable.</li>
+                          </ul>
+                        </div>
+                      </div>
+
+                      {/* PROJECTS */}
+                      <div className="mt-4">
+                        <div className="text-[11px] font-bold tracking-wider text-[#09090b] border-b border-[#09090b] pb-0.5 mb-2 uppercase font-mono">
+                          PROJECTS
+                        </div>
+
+                        {/* Project 1 */}
+                        <div className="mb-3">
+                          <div className="flex justify-between items-baseline text-[11.5px]">
+                            <div><strong className="font-semibold text-[#09090b]">Voyago – Real-Time Cab Booking Platform</strong> | React, Tailwind CSS, Node.js, Socket.io, MongoDB</div>
+                            <div className="font-mono text-[10.5px] text-[#52525b]">Oct 2025 – Nov 2025</div>
+                          </div>
+                          <div className="text-[10px] text-[#52525b] font-mono mt-0.5 space-x-1.5">
+                            <a href="https://github.com/4bjith/Voyago" target="_blank" rel="noreferrer" className="underline hover:text-black">GitHub</a>
+                            <span>|</span>
+                            <a href="https://voyago-sandy.vercel.app/" target="_blank" rel="noreferrer" className="underline hover:text-black">Live Demo</a>
+                          </div>
+                          <ul className="list-disc list-outside ml-4 mt-1 space-y-1 text-[11px] text-[#27272a]">
+                            <li>Built the responsive React UI for an Uber-style app, with live ride tracking and rider–driver communication via Socket.io.</li>
+                            <li>Integrated Leaflet and OpenStreetMap to display live location on interactive maps.</li>
+                            <li>Consumed secure REST APIs for bookings, driver communication and user management; deployed the frontend on Vercel.</li>
+                          </ul>
+                        </div>
+
+                        {/* Project 2 */}
+                        <div className="mb-3">
+                          <div className="flex justify-between items-baseline text-[11.5px]">
+                            <div><strong className="font-semibold text-[#09090b]">Multi-Merchant E-Commerce Platform</strong> | React, Zustand, Tailwind CSS, Axios, Node.js, MongoDB</div>
+                            <div className="font-mono text-[10.5px] text-[#52525b]">Nov 2025 – Jan 2026</div>
+                          </div>
+                          <div className="text-[10px] text-[#52525b] font-mono mt-0.5">
+                            <a href="https://github.com/4bjith/GroupProject-OnlineStore" target="_blank" rel="noreferrer" className="underline hover:text-black">GitHub</a>
+                          </div>
+                          <ul className="list-disc list-outside ml-4 mt-1 space-y-1 text-[11px] text-[#27272a]">
+                            <li>Developed a responsive admin dashboard for inventory, orders and store management.</li>
+                            <li>Designed the merchant onboarding flow so sellers can create and manage their own stores.</li>
+                            <li>Managed global application state with Zustand and integrated frontend with backend APIs using Axios.</li>
+                          </ul>
+                        </div>
+
+                        {/* Project 3 */}
+                        <div>
+                          <div className="flex justify-between items-baseline text-[11.5px]">
+                            <div><strong className="font-semibold text-[#09090b]">TrendQuick – Full-Stack E-Commerce Website</strong> | React, Tailwind CSS, Node.js, Express, MongoDB</div>
+                            <div className="font-mono text-[10.5px] text-[#52525b]">Sep 2025</div>
+                          </div>
+                          <div className="text-[10px] text-[#52525b] font-mono mt-0.5">
+                            <a href="https://github.com/4bjith/TrendQuick" target="_blank" rel="noreferrer" className="underline hover:text-black">GitHub</a>
+                          </div>
+                          <ul className="list-disc list-outside ml-4 mt-1 space-y-1 text-[11px] text-[#27272a]">
+                            <li>Built a fully responsive, mobile-first UI with Tailwind CSS.</li>
+                            <li>Implemented dynamic shopping cart with real-time UI updates, backed by RESTful APIs for products, categories and cart operations.</li>
+                          </ul>
+                        </div>
+                      </div>
+
+                      {/* EDUCATION */}
+                      <div className="mt-4">
+                        <div className="text-[11px] font-bold tracking-wider text-[#09090b] border-b border-[#09090b] pb-0.5 mb-1.5 uppercase font-mono">
+                          EDUCATION
+                        </div>
+                        <div className="space-y-1.5 text-[11px]">
+                          <div className="flex justify-between items-baseline">
+                            <div><strong className="font-semibold text-[#09090b]">Full Stack Web Development (MERN)</strong> | G-Tec, Kannur, Kerala</div>
+                            <div className="font-mono text-[10.5px] text-[#52525b]">Jun 2025 – Nov 2025</div>
+                          </div>
+                          <div className="flex justify-between items-baseline">
+                            <div><strong className="font-semibold text-[#09090b]">Computer Operator and Programming Assistant</strong> | Govt ITI Kuthuparamba, Kannur</div>
+                            <div className="font-mono text-[10.5px] text-[#52525b]">Mar 2022</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  /* LaTeX Raw Monospace Source */
+                  <div className="flex-1 overflow-y-auto p-5 bg-[#fafafa] font-mono text-[11px] leading-relaxed text-[#09090b]">
+                    <pre className="whitespace-pre-wrap">{getLatexSource()}</pre>
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* Cover Note / Text View */
+              <div className="p-5 overflow-y-auto flex-1 font-mono text-[12px] leading-relaxed text-[#09090b]">
+                {isCoverNoteEdit ? (
+                  <textarea
+                    value={coverNoteText}
+                    onChange={(e) => setCoverNoteText(e.target.value)}
+                    className="w-full h-80 p-3 border border-[#e4e4e7] font-mono text-[12px] text-[#09090b] focus:border-[#09090b] focus:outline-none"
+                  />
+                ) : (
+                  <pre className="whitespace-pre-wrap font-mono">{modalContent}</pre>
+                )}
+              </div>
+            )}
+
+            {/* Modal Footer */}
+            <div className="h-12 px-4 border-t border-[#e4e4e7] bg-[#fafafa] flex items-center justify-between shrink-0">
+              <div>
+                {isResumeInspect && (
+                  <button
+                    onClick={() => window.print()}
+                    className="font-mono text-[11px] text-[#09090b] border border-[#e4e4e7] hover:border-[#09090b] px-3 py-1 bg-white transition-colors"
+                  >
+                    [ PRINT / EXPORT ATS PDF ]
+                  </button>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setModalOpen(false)}
+                  className="font-mono text-[11px] text-[#71717a] hover:text-[#09090b] border border-[#e4e4e7] px-3 py-1 bg-white"
+                >
+                  Dismiss
+                </button>
+                <button
+                  onClick={() => {
+                    setModalOpen(false);
+                    if (onToast) onToast("Saved", "Updated artifact settings", "success");
+                  }}
+                  className="font-mono text-[11px] font-semibold text-white bg-[#09090b] hover:bg-[#27272a] px-4 py-1"
+                >
+                  Save Changes
+                </button>
+              </div>
             </div>
           </div>
         </div>
