@@ -36,8 +36,24 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             import app.models  # noqa: F401
             await conn.run_sync(Base.metadata.create_all)
         logger.info("SQLite database tables verified/created successfully.")
+
+    if not settings.is_testing:
+        try:
+            from app.workers.scheduler import start_agent_scheduler
+            start_agent_scheduler()
+        except Exception as sched_exc:
+            logger.warning(f"Could not start agent scheduler: {sched_exc}")
+
     yield
+
     logger.info("Shutting down AI CV Maker API", extra={"event": "shutdown"})
+    if not settings.is_testing:
+        try:
+            from app.workers.scheduler import shutdown_agent_scheduler
+            shutdown_agent_scheduler()
+        except Exception as sched_exc:
+            logger.warning(f"Could not shut down agent scheduler cleanly: {sched_exc}")
+
     try:
         from app.ai.factory import get_ai_provider
         ai_provider = get_ai_provider()

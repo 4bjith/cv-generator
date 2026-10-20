@@ -69,12 +69,16 @@ const ApplicationDetailView = lazy(() =>
   import("@/components/workspace").then((m) => ({ default: m.ApplicationDetailView }))
 );
 const SettingsView = lazy(() => import("@/components/workspace").then((m) => ({ default: m.SettingsView })));
+const AgentDashboardView = lazy(() =>
+  import("@/components/agent/agent-dashboard").then((m) => ({ default: m.AgentDashboardView }))
+);
 
 const VALID_VIEWS: Set<AppView> = new Set<AppView>([
   "landing",
   "auth",
   "onboarding",
   "dashboard",
+  "agent",
   "profile",
   "projects",
   "add-job",
@@ -273,6 +277,12 @@ export default function Home() {
               onBack={() => navigate("applications")}
               onToast={addToast}
             />
+          </Suspense>
+        );
+      case "agent":
+        return (
+          <Suspense fallback={<DashboardSkeleton />}>
+            <AgentDashboardView onToast={addToast} />
           </Suspense>
         );
       case "settings":

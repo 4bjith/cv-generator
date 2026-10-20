@@ -8,6 +8,7 @@ from app.db.base import Base, TimestampMixin
 
 if TYPE_CHECKING:
     from app.models.auth_session import AuthSession
+    from app.models.autonomous_agent import JobSearchProfile
     from app.models.cover_letter import CoverLetter
     from app.models.cv_version import CVVersion
     from app.models.job_target import JobTarget
@@ -81,6 +82,13 @@ class User(Base, TimestampMixin):
         "CoverLetter",
         back_populates="user",
         cascade="all, delete-orphan",
+    )
+    job_search_profile: Mapped[Optional["JobSearchProfile"]] = relationship(
+        "JobSearchProfile",
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan",
+        lazy="selectin",
     )
 
     def __repr__(self) -> str:

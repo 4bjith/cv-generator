@@ -1,4 +1,13 @@
 from app.models.auth_session import AuthSession
+from app.models.autonomous_agent import (
+    AgentDailyReport,
+    ApplicationRecord,
+    DiscoveredJob,
+    FollowUpSchedule,
+    JobSearchProfile,
+    QAMemoryBankItem,
+    RecruiterOutreach,
+)
 from app.models.cover_letter import CoverLetter
 from app.models.cv_version import CVVersion
 from app.models.job_target import JobTarget
@@ -44,6 +53,13 @@ __all__ = [
     "SkillProjectAssociation",
     "SkillCertificationAssociation",
     "SkillAchievementAssociation",
+    "JobSearchProfile",
+    "DiscoveredJob",
+    "QAMemoryBankItem",
+    "ApplicationRecord",
+    "RecruiterOutreach",
+    "FollowUpSchedule",
+    "AgentDailyReport",
 ]
 
 

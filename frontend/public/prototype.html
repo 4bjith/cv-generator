@@ -1,0 +1,1662 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AGENT / AUTONOMOUS JOB RUNNER — Obsidian Kinetic</title>
+  <!-- Modern Clean Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+  
+  <style>
+    /* --------------------------------------------------------------------------
+       OBSIDIAN KINETIC DESIGN SYSTEM TOKENS (Strict Monochrome & Architectural)
+       -------------------------------------------------------------------------- */
+    :root {
+      --bg-base: #0a0a0a;
+      --bg-surface: #121212;
+      --bg-surface-elevated: #181818;
+      --bg-surface-card: #141414;
+      --border-hairline: #262626;
+      --border-hairline-bright: #383838;
+      --text-primary: #ffffff;
+      --text-secondary: #a3a3a3;
+      --text-muted: #737373;
+      --text-dim: #525252;
+      
+      --accent-solid: #ffffff;
+      --accent-on-solid: #000000;
+      
+      --badge-bg: #1c1c1c;
+      --badge-border: #333333;
+      
+      --font-sans: 'Geist', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    /* Light monochrome mode variant */
+    html.light {
+      --bg-base: #fafafa;
+      --bg-surface: #ffffff;
+      --bg-surface-elevated: #f4f4f5;
+      --bg-surface-card: #ffffff;
+      --border-hairline: #e4e4e7;
+      --border-hairline-bright: #d4d4d8;
+      --text-primary: #09090b;
+      --text-secondary: #52525b;
+      --text-muted: #71717a;
+      --text-dim: #a1a1aa;
+      
+      --accent-solid: #09090b;
+      --accent-on-solid: #ffffff;
+      
+      --badge-bg: #f4f4f5;
+      --badge-border: #e4e4e7;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--bg-base);
+      color: var(--text-primary);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    /* --------------------------------------------------------------------------
+       TYPOGRAPHIC UTILITIES
+       -------------------------------------------------------------------------- */
+    .font-mono {
+      font-family: var(--font-mono);
+      font-feature-settings: "tnum" 1;
+    }
+    .label-caps {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-weight: 500;
+    }
+    .tabular {
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* --------------------------------------------------------------------------
+       PULSE & ANIMATIONS (Micro, non-distracting)
+       -------------------------------------------------------------------------- */
+    @keyframes pulse-subtle {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.35; }
+    }
+    .status-pulse {
+      animation: pulse-subtle 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    /* Minimal Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--bg-base);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--border-hairline-bright);
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--text-muted);
+    }
+
+    /* --------------------------------------------------------------------------
+       TOP APP HEADER
+       -------------------------------------------------------------------------- */
+    .top-header {
+      height: 48px;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-hairline);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      z-index: 40;
+      flex-shrink: 0;
+    }
+    .brand-cluster {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand-mark {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .pulse-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--text-primary);
+      border-radius: 50%;
+    }
+    .badge-tag {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      color: var(--text-secondary);
+      border: 1px solid var(--border-hairline);
+      padding: 2px 6px;
+      background: var(--bg-surface-elevated);
+    }
+    .pipeline-stepper {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+    .step-item {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 4px 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: color 0.15s ease;
+      background: none;
+      border: none;
+    }
+    .step-item:hover {
+      color: var(--text-primary);
+    }
+    .step-item.active {
+      color: var(--text-primary);
+      border-bottom: 1.5px solid var(--text-primary);
+      font-weight: 600;
+    }
+    .step-divider {
+      color: var(--border-hairline-bright);
+      font-size: 11px;
+    }
+    .telemetry-bar {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .theme-toggle-btn {
+      background: none;
+      border: 1px solid var(--border-hairline);
+      color: var(--text-secondary);
+      padding: 4px 8px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .theme-toggle-btn:hover {
+      border-color: var(--text-primary);
+      color: var(--text-primary);
+    }
+
+    /* --------------------------------------------------------------------------
+       VIEW SWITCHER / SUBHEADER
+       -------------------------------------------------------------------------- */
+    .view-subbar {
+      height: 38px;
+      background: var(--bg-base);
+      border-bottom: 1px solid var(--border-hairline);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      flex-shrink: 0;
+    }
+    .view-tabs {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .tab-btn {
+      background: none;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      padding: 4px 10px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .tab-btn:hover {
+      color: var(--text-primary);
+    }
+    .tab-btn.active {
+      background: var(--bg-surface-elevated);
+      border-color: var(--border-hairline-bright);
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    /* --------------------------------------------------------------------------
+       MAIN WORKSPACE CONTAINER
+       -------------------------------------------------------------------------- */
+    .workspace-container {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* --------------------------------------------------------------------------
+       LEFT PANE: CONVERSATIONAL AGENT INTERFACE (40% width)
+       -------------------------------------------------------------------------- */
+    .agent-pane {
+      width: 40%;
+      min-width: 440px;
+      max-width: 580px;
+      border-right: 1px solid var(--border-hairline);
+      background: var(--bg-surface);
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+    }
+    .pane-header {
+      height: 36px;
+      padding: 0 16px;
+      border-bottom: 1px solid var(--border-hairline);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-base);
+      flex-shrink: 0;
+    }
+    .chat-scroll-stream {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    
+    /* Terminal execution block */
+    .log-terminal {
+      background: var(--bg-base);
+      border: 1px solid var(--border-hairline);
+      padding: 12px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+    .log-line {
+      display: flex;
+      gap: 8px;
+    }
+    .log-time {
+      color: var(--text-muted);
+    }
+
+    /* Agent Message Card */
+    .agent-bubble {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-hairline);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .bubble-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-hairline);
+      padding-bottom: 8px;
+    }
+    .bubble-title {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .bubble-body {
+      font-size: 13px;
+      color: var(--text-primary);
+      line-height: 1.6;
+    }
+    .bubble-meta-card {
+      background: var(--bg-base);
+      border: 1px solid var(--border-hairline);
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    /* User Message Bubble */
+    .user-bubble {
+      background: var(--bg-base);
+      border: 1px solid var(--border-hairline-bright);
+      padding: 12px 14px;
+      align-self: flex-end;
+      max-width: 90%;
+      font-size: 13px;
+    }
+
+    /* Agent Input & Prompt Bar */
+    .agent-input-dock {
+      padding: 14px;
+      border-top: 1px solid var(--border-hairline);
+      background: var(--bg-surface);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    .chip-cloud {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .action-chip {
+      background: var(--bg-base);
+      border: 1px solid var(--border-hairline);
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.05em;
+      padding: 4px 8px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .action-chip:hover {
+      border-color: var(--text-primary);
+      color: var(--text-primary);
+    }
+    .input-box-row {
+      display: flex;
+      align-items: center;
+      border: 1px solid var(--border-hairline);
+      background: var(--bg-base);
+      padding-left: 10px;
+      transition: border-color 0.15s ease;
+    }
+    .input-box-row:focus-within {
+      border-color: var(--text-primary);
+    }
+    .cli-prompt-symbol {
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+    .agent-text-input {
+      flex: 1;
+      background: none;
+      border: none;
+      padding: 10px 12px;
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 13px;
+      outline: none;
+    }
+    .agent-text-input::placeholder {
+      color: var(--text-dim);
+    }
+    .send-btn {
+      background: var(--accent-solid);
+      color: var(--accent-on-solid);
+      border: none;
+      padding: 8px 14px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      margin: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: opacity 0.15s ease;
+    }
+    .send-btn:hover {
+      opacity: 0.88;
+    }
+
+    /* --------------------------------------------------------------------------
+       RIGHT PANE: ARTIFACT CANVAS & VERIFICATION ENGINE (60% width)
+       -------------------------------------------------------------------------- */
+    .artifact-pane {
+      flex: 1;
+      background: var(--bg-base);
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+    }
+    .canvas-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Target Job Specification Box */
+    .job-target-card {
+      border: 1px solid var(--border-hairline);
+      background: var(--bg-surface);
+      padding: 20px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 20px;
+    }
+    .job-title-group h1 {
+      font-size: 24px;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      margin-top: 4px;
+      color: var(--text-primary);
+    }
+    .job-meta-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 8px;
+    }
+    .meta-separator {
+      color: var(--border-hairline-bright);
+    }
+    .telemetry-stat-card {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-hairline);
+      padding: 10px 16px;
+      text-align: right;
+      min-width: 130px;
+    }
+    .stat-val {
+      font-family: var(--font-mono);
+      font-size: 22px;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    /* 2-Column Comparative Matrix */
+    .matrix-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .matrix-col {
+      border: 1px solid var(--border-hairline);
+      background: var(--bg-surface);
+      display: flex;
+      flex-direction: column;
+    }
+    .matrix-col-header {
+      height: 34px;
+      padding: 0 14px;
+      background: var(--bg-surface-elevated);
+      border-bottom: 1px solid var(--border-hairline);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+    }
+    .matrix-col-header.highlight {
+      color: var(--text-primary);
+    }
+    .matrix-body {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      font-size: 12px;
+    }
+    .matrix-row-item {
+      display: flex;
+      gap: 10px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-hairline);
+      line-height: 1.5;
+    }
+    .matrix-row-item:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+    .matrix-num {
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+      font-size: 11px;
+      width: 20px;
+      flex-shrink: 0;
+    }
+    .matrix-check {
+      font-family: var(--font-mono);
+      color: var(--text-primary);
+      font-size: 11px;
+      font-weight: 600;
+      width: 20px;
+      flex-shrink: 0;
+    }
+
+    /* Staged Artifacts Area */
+    .staged-artifacts-card {
+      border: 1px solid var(--border-hairline);
+      background: var(--bg-surface);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .artifacts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .artifact-item {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-hairline);
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .artifact-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      overflow: hidden;
+    }
+    .artifact-type-tag {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .artifact-title {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .artifact-meta {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--text-muted);
+    }
+
+    /* Playwright Session Status Strip */
+    .playwright-strip {
+      border: 1px solid var(--border-hairline);
+      background: var(--bg-base);
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 11px;
+    }
+    .strip-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .strip-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      color: var(--text-muted);
+    }
+
+    /* Bottom Action Dock (Anchored) */
+    .action-dock {
+      height: 60px;
+      padding: 0 32px;
+      background: var(--bg-surface);
+      border-top: 1px solid var(--border-hairline);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .btn-ghost-danger {
+      background: none;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      padding: 8px 12px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .btn-ghost-danger:hover {
+      border-color: var(--border-hairline);
+      color: var(--text-primary);
+    }
+    .action-right-cluster {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .btn-secondary {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-hairline);
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      padding: 8px 16px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .btn-secondary:hover {
+      border-color: var(--text-primary);
+    }
+    .btn-primary {
+      background: var(--accent-solid);
+      border: 1px solid var(--accent-solid);
+      color: var(--accent-on-solid);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      font-weight: 600;
+      padding: 8px 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: opacity 0.15s ease;
+    }
+    .btn-primary:hover {
+      opacity: 0.88;
+    }
+
+    /* --------------------------------------------------------------------------
+       VIEW 2: PIPELINE CONFIG & DAILY MORNING SCHEDULE (Screen 2)
+       -------------------------------------------------------------------------- */
+    .config-view {
+      display: none;
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 32px;
+      gap: 24px;
+    }
+    .config-view.active {
+      display: flex;
+    }
+    .config-grid {
+      display: grid;
+      grid-template-columns: 460px 1fr;
+      gap: 24px;
+      width: 100%;
+    }
+    .config-card {
+      border: 1px solid var(--border-hairline);
+      background: var(--bg-surface);
+      display: flex;
+      flex-direction: column;
+    }
+    .config-card-header {
+      height: 38px;
+      padding: 0 16px;
+      background: var(--bg-surface-elevated);
+      border-bottom: 1px solid var(--border-hairline);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .config-card-body {
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .setting-row {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-hairline);
+    }
+    .setting-row:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+    .setting-label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+    }
+    .setting-val {
+      font-size: 13px;
+      color: var(--text-primary);
+    }
+    .pill-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 4px;
+    }
+    .mono-pill {
+      border: 1px solid var(--border-hairline);
+      background: var(--bg-base);
+      padding: 3px 8px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-secondary);
+    }
+    .mono-pill.active {
+      border-color: var(--text-primary);
+      color: var(--text-primary);
+      background: var(--bg-surface-elevated);
+    }
+
+    /* Batch Table */
+    .audit-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--font-mono);
+      font-size: 11px;
+    }
+    .audit-table th {
+      text-align: left;
+      padding: 10px 12px;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border-hairline);
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      background: var(--bg-surface-elevated);
+    }
+    .audit-table td {
+      padding: 12px;
+      border-bottom: 1px solid var(--border-hairline);
+      color: var(--text-secondary);
+    }
+    .audit-table tr:hover td {
+      background: var(--bg-surface-elevated);
+      color: var(--text-primary);
+    }
+
+    /* --------------------------------------------------------------------------
+       MODAL: COVER LETTER & TELEMETRY INSPECTOR
+       -------------------------------------------------------------------------- */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .modal-backdrop.active {
+      display: flex;
+    }
+    .modal-box {
+      width: 100%;
+      max-width: 680px;
+      background: var(--bg-surface);
+      border: 1px solid var(--text-primary);
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 0 0 1px var(--border-hairline);
+    }
+    .modal-head {
+      height: 42px;
+      padding: 0 18px;
+      border-bottom: 1px solid var(--border-hairline);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-surface-elevated);
+    }
+    .modal-body {
+      padding: 20px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      line-height: 1.7;
+      color: var(--text-primary);
+      max-height: 60vh;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+    .modal-foot {
+      padding: 12px 18px;
+      border-top: 1px solid var(--border-hairline);
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      background: var(--bg-surface-elevated);
+    }
+  </style>
+</head>
+
+<body>
+  <!-- --------------------------------------------------------------------------
+       TOP NAVIGATION BAR
+       -------------------------------------------------------------------------- -->
+  <header class="top-header">
+    <div class="brand-cluster">
+      <div class="brand-mark">
+        <span class="pulse-dot status-pulse"></span>
+        <span>AGENT / AUTONOMOUS JOB RUNNER</span>
+      </div>
+      <span class="badge-tag">[ACTIVE]</span>
+    </div>
+
+    <!-- Center Stepper Navigation -->
+    <nav class="pipeline-stepper" id="pipelineNav">
+      <button class="step-item" onclick="switchMainTab('config')">01 DISCOVER</button>
+      <span class="step-divider">/</span>
+      <button class="step-item" onclick="switchMainTab('config')">02 SCORE</button>
+      <span class="step-divider">/</span>
+      <button class="step-item" onclick="switchMainTab('command')">03 TAILOR</button>
+      <span class="step-divider">/</span>
+      <button class="step-item active" onclick="switchMainTab('command')">[ 04 VERIFY ]</button>
+      <span class="step-divider">/</span>
+      <button class="step-item" onclick="openOutreachModal()">05 OUTREACH</button>
+    </nav>
+
+    <!-- Right Telemetry Counters & Theme Toggle -->
+    <div class="telemetry-bar">
+      <span class="tabular">24 Scanned</span>
+      <span class="step-divider">|</span>
+      <span class="tabular">3 Tailored</span>
+      <span class="step-divider">|</span>
+      <span style="color: var(--text-primary);" class="tabular">1 Pending Review</span>
+      <span class="step-divider">|</span>
+      <span id="clockDisplay" class="tabular">08:42:15 IST</span>
+      
+      <button class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Monochrome Inversion">
+        <span id="themeLabel">LIGHT / INVERT</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- --------------------------------------------------------------------------
+       SUB-BAR / VIEW SWITCHER
+       -------------------------------------------------------------------------- -->
+  <div class="view-subbar">
+    <div class="view-tabs">
+      <button class="tab-btn active" id="tabCommand" onclick="switchMainTab('command')">COMMAND CENTER & DISPATCH AUDIT</button>
+      <button class="tab-btn" id="tabConfig" onclick="switchMainTab('config')">PIPELINE CONFIG & DAILY MORNING SCHEDULE</button>
+    </div>
+    <div class="label-caps" style="color: var(--text-muted);">
+      CANDIDATE: <span style="color: var(--text-primary);">ABHIJITH AT</span> · TARGET: <span style="color: var(--text-primary);">SOUTH INDIA (BLR/HYD/CHN/KL)</span>
+    </div>
+  </div>
+
+  <!-- --------------------------------------------------------------------------
+       VIEW 1: COMMAND CENTER (Dual-Pane Conversational & Artifact Canvas)
+       -------------------------------------------------------------------------- -->
+  <div class="workspace-container" id="commandCenterView">
+    
+    <!-- LEFT PANE: CONVERSATIONAL AGENT INTERFACE -->
+    <section class="agent-pane">
+      <div class="pane-header">
+        <div class="label-caps" style="color: var(--text-muted);">
+          CONTEXT / <span style="color: var(--text-primary);">AGENT_TERMINAL</span>
+        </div>
+        <div class="badge-tag">LLM ORCHESTRATOR v2.4</div>
+      </div>
+
+      <!-- Chat Stream -->
+      <div class="chat-scroll-stream" id="chatStream">
+        <!-- Monospace log snippet -->
+        <div class="log-terminal">
+          <div class="log-line">
+            <span class="log-time">[08:30:12]</span>
+            <span>Crawled 14 job portals across South India (Bengaluru, Hyderabad, Chennai).</span>
+          </div>
+          <div class="log-line">
+            <span class="log-time">[08:31:45]</span>
+            <span>Filter criteria passed: React 18, Concurrency, High-frequency UI, &gt;₹20 LPA.</span>
+          </div>
+          <div class="log-line">
+            <span class="log-time">[08:33:02]</span>
+            <span>Target acquired: Zerodha Broking Ltd. Parsing schema requirements...</span>
+          </div>
+        </div>
+
+        <!-- Agent message card -->
+        <div class="agent-bubble">
+          <div class="bubble-head">
+            <div class="bubble-title">
+              <span style="width: 4px; height: 4px; background: var(--text-primary); display: inline-block;"></span>
+              ORCHESTRATOR_DISPATCH
+            </div>
+            <div class="label-caps" style="color: var(--text-muted);">08:35:40 IST</div>
+          </div>
+          <div class="bubble-body">
+            Morning pipeline completed for South India (Bengaluru, Hyderabad, Chennai). Identified top match: <strong style="color: var(--text-primary); font-weight: 600;">Senior Frontend Engineer at Zerodha</strong>. Tailored CV and verified Playwright submission form. Awaiting your approval.
+          </div>
+
+          <!-- Evaluation Parameters Breakdown -->
+          <div class="bubble-meta-card">
+            <div style="display: flex; justify-content: space-between; align-items: center;" class="label-caps">
+              <span style="color: var(--text-muted);">EVALUATION PARAMETERS</span>
+              <span style="color: var(--text-primary); font-weight: 600;">[ 94% CONFIDENCE ]</span>
+            </div>
+            <p style="font-size: 11px; color: var(--text-secondary); line-height: 1.5;">
+              Matched criteria: React concurrency, performance profiling, high-frequency trading UI systems. Verified against target profile.
+            </p>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); border-top: 1px solid var(--border-hairline); padding-top: 6px;">
+              <div>Core Alignment: <span style="color: var(--text-primary);" class="tabular">0.96</span></div>
+              <div>Domain Experience: <span style="color: var(--text-primary);" class="tabular">0.92</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Telemetry Log Line -->
+        <div style="border-left: 2px solid var(--border-hairline-bright); padding-left: 10px; font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);">
+          [08:36:19] Headless Chromium socket bound. Form payload staged at /tmp/z_payload_7a8.json
+        </div>
+      </div>
+
+      <!-- Agent Input Bar -->
+      <div class="agent-input-dock">
+        <div class="chip-cloud">
+          <button class="action-chip" onclick="handleChipClick('Run morning hunt')">Run morning hunt</button>
+          <button class="action-chip" onclick="handleChipClick('Inspect queue')">Inspect queue</button>
+          <button class="action-chip" onclick="handleChipClick('View audit logs')">View audit logs</button>
+          <button class="action-chip" onclick="handleChipClick('Regenerate pitch')">Regenerate pitch</button>
+        </div>
+        <div class="input-box-row">
+          <span class="cli-prompt-symbol">&gt;</span>
+          <input type="text" id="agentInput" class="agent-text-input" placeholder="Instruct agent or query current pipeline..." onkeydown="if(event.key==='Enter') sendAgentMessage()"/>
+          <button class="send-btn" onclick="sendAgentMessage()">
+            <span>Send</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT PANE: ARTIFACT CANVAS & VERIFICATION ENGINE -->
+    <section class="artifact-pane">
+      <div class="pane-header">
+        <div class="label-caps" style="color: var(--text-muted);">
+          VERIFICATION / <span style="color: var(--text-primary);">DISPATCH_AUDIT</span>
+        </div>
+        <div class="badge-tag" id="queueItemTag">DISPATCH QUEUE [ITEM 1 OF 3]</div>
+      </div>
+
+      <!-- Main Canvas Scroll -->
+      <div class="canvas-scroll">
+        <!-- Target Job Header Card -->
+        <div class="job-target-card">
+          <div class="job-title-group">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="label-caps" style="color: var(--text-muted);">TARGET FIRM:</span>
+              <span class="badge-tag">NSE / BSE MEMBER</span>
+            </div>
+            <h1 id="targetJobTitle">Zerodha — Senior Frontend Engineer</h1>
+            <div class="job-meta-row">
+              <span id="targetStack">React / TypeScript</span>
+              <span class="meta-separator">·</span>
+              <span id="targetLocation">Bengaluru, KA (Hybrid)</span>
+              <span class="meta-separator">·</span>
+              <span style="color: var(--text-primary);" class="tabular" id="targetComp">₹24–32 LPA</span>
+              <span class="meta-separator">·</span>
+              <span style="color: var(--text-primary); font-weight: 600;" id="targetMatch">Match 94%</span>
+            </div>
+          </div>
+          <div class="telemetry-stat-card">
+            <span class="label-caps" style="color: var(--text-muted); display: block;">TARGET LATENCY</span>
+            <span class="stat-val tabular">42ms</span>
+            <span class="label-caps" style="color: var(--text-muted); display: block; margin-top: 2px;">PORT: 8080 SSL</span>
+          </div>
+        </div>
+
+        <!-- 2-Column Comparative Matrix -->
+        <div class="matrix-grid">
+          <!-- Column 1: Role Specification -->
+          <div class="matrix-col">
+            <div class="matrix-col-header">
+              <span>ROLE SPECIFICATION &amp; CRITICAL REQ</span>
+              <span>PORTAL_SPEC</span>
+            </div>
+            <div class="matrix-body" id="roleSpecCol">
+              <div class="matrix-row-item">
+                <span class="matrix-num">01</span>
+                <div>Architect scalable web platforms using React 18, TypeScript, and state management.</div>
+              </div>
+              <div class="matrix-row-item">
+                <span class="matrix-num">02</span>
+                <div>High-frequency data streaming via WebSockets with &lt;16ms UI frame budgets.</div>
+              </div>
+              <div class="matrix-row-item">
+                <span class="matrix-num">03</span>
+                <div>Deep understanding of browser rendering performance, DOM profiling, and WebAssembly.</div>
+              </div>
+              <div class="matrix-row-item">
+                <span class="matrix-num">04</span>
+                <div>Self-directed engineering ownership and zero-bloat architectural philosophy.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Column 2: Candidate Tailored Highlights -->
+          <div class="matrix-col">
+            <div class="matrix-col-header highlight">
+              <span>CANDIDATE HIGHLIGHTS — ABHIJITH AT</span>
+              <span style="color: var(--text-primary);">TAILORED_SYNTH</span>
+            </div>
+            <div class="matrix-body" id="candidateMatchCol">
+              <div class="matrix-row-item">
+                <span class="matrix-check">[✓]</span>
+                <div>Led migration to concurrent React + Vite architecture, shaving 42% initial bundle size.</div>
+              </div>
+              <div class="matrix-row-item">
+                <span class="matrix-check">[✓]</span>
+                <div>Engineered real-time orderbook rendering pipeline processing 25,000 updates/sec with zero jank.</div>
+              </div>
+              <div class="matrix-row-item">
+                <span class="matrix-check">[✓]</span>
+                <div>Built custom Chrome DevTools profiler extensions; published open-source memory leak detection tools.</div>
+              </div>
+              <div class="matrix-row-item">
+                <span class="matrix-check">[✓]</span>
+                <div>Engineered autonomous job orchestrator using Playwright headless execution scripts.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Staged Submission Artifacts -->
+        <div class="staged-artifacts-card">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-hairline); padding-bottom: 8px;">
+            <span class="label-caps" style="color: var(--text-muted);">STAGED ARTIFACTS FOR SUBMISSION</span>
+            <span class="label-caps" style="color: var(--text-primary);">2 / 2 READY</span>
+          </div>
+          <div class="artifacts-grid">
+            <!-- Artifact 1: CV -->
+            <div class="artifact-item">
+              <div class="artifact-info">
+                <span class="artifact-type-tag">[PDF]</span>
+                <div>
+                  <div class="artifact-title" id="cvArtifactTitle">Abhijith_AT_Zerodha_Tailored.pdf</div>
+                  <div class="artifact-meta">SHA-256: 7d1a...04ef · COMPILED LATEX</div>
+                </div>
+              </div>
+              <span class="badge-tag" style="color: var(--text-primary); cursor: pointer;" onclick="previewResumeModal()">INSPECT</span>
+            </div>
+
+            <!-- Artifact 2: Cover Note -->
+            <div class="artifact-item">
+              <div class="artifact-info">
+                <span class="artifact-type-tag">[TXT]</span>
+                <div>
+                  <div class="artifact-title">Cover Note: 184 words tailored</div>
+                  <div class="artifact-meta">TONE: NITHIN KAMATH TECH ETHOS</div>
+                </div>
+              </div>
+              <span class="badge-tag" style="color: var(--text-primary); cursor: pointer;" onclick="previewCoverNoteModal()">EDIT / VIEW</span>
+            </div>
+          </div>
+
+          <!-- Playwright Session Status Strip -->
+          <div class="playwright-strip">
+            <div class="strip-left">
+              <span style="width: 6px; height: 6px; background: var(--text-primary); display: inline-block;"></span>
+              <span>Playwright headless session ready. Target: <code style="color: var(--text-primary);" id="targetUrl">zerodha.com/careers/apply</code></span>
+            </div>
+            <div class="strip-right">
+              <span>VERIFICATION: <strong style="color: var(--text-primary);">[PASSED]</strong></span>
+              <span>DOM_MUTATION: 0</span>
+              <span class="tabular">LATENCY: 42ms</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Dock (Anchored at Pane Bottom) -->
+      <footer class="action-dock">
+        <button class="btn-ghost-danger" onclick="rejectQueueItem()">[SKIP / ARCHIVE]</button>
+        <div class="action-right-cluster">
+          <button class="btn-secondary" onclick="previewCoverNoteModal()">Edit Cover Note</button>
+          <button class="btn-primary" id="dispatchBtn" onclick="dispatchApplication()">
+            <span>Approve &amp; Dispatch Application</span>
+            <span class="label-caps">-&gt;</span>
+          </button>
+        </div>
+      </footer>
+    </section>
+  </div>
+
+  <!-- --------------------------------------------------------------------------
+       VIEW 2: PIPELINE CONFIGURATION & DAILY MORNING SCHEDULE (Screen 2)
+       -------------------------------------------------------------------------- -->
+  <div class="config-view" id="configView">
+    <div class="config-grid">
+      
+      <!-- LEFT COLUMN: Cadence & Automation Presets -->
+      <div style="display: flex; flex-direction: column; gap: 20px;">
+        <!-- Card 1: Execution Cadence -->
+        <div class="config-card">
+          <div class="config-card-header">
+            <span class="label-caps" style="color: var(--text-primary);">01 / CADENCE &amp; SCHEDULER</span>
+            <span class="badge-tag">[CRON: 30 07 * * 1-5]</span>
+          </div>
+          <div class="config-card-body">
+            <div class="setting-row">
+              <span class="setting-label">DAILY MORNING EXECUTION</span>
+              <span class="setting-val" style="font-weight: 500;">07:30 IST (Monday through Friday)</span>
+              <span style="font-size: 11px; color: var(--text-muted); font-family: var(--font-mono);">
+                Next trigger: Tomorrow at 07:30:00 IST (in 13h 48m)
+              </span>
+            </div>
+            <div class="setting-row">
+              <span class="setting-label">AUTOMATION ENGINE</span>
+              <span class="setting-val">Headless Playwright v1.42</span>
+              <span style="font-size: 11px; color: var(--text-muted);">
+                Stealth fingerprint spoofing, residential egress proxy, human keystroke delays (45-130ms)
+              </span>
+            </div>
+            <div class="setting-row">
+              <span class="setting-label">DISPATCH GATING PROTOCOL</span>
+              <div class="pill-group">
+                <span class="mono-pill active">[X] HUMAN-IN-THE-LOOP APPROVAL</span>
+                <span class="mono-pill">[ ] FULLY UNATTENDED AUTO-DISPATCH</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2: Criteria & Geographies -->
+        <div class="config-card">
+          <div class="config-card-header">
+            <span class="label-caps" style="color: var(--text-primary);">02 / SEARCH FILTERS &amp; HUBS</span>
+            <span class="badge-tag">SOUTH INDIA &amp; REMOTE</span>
+          </div>
+          <div class="config-card-body">
+            <div class="setting-row">
+              <span class="setting-label">TARGET ROLES</span>
+              <div class="pill-group">
+                <span class="mono-pill active">Senior Frontend Engineer</span>
+                <span class="mono-pill active">Full Stack MERN Lead</span>
+                <span class="mono-pill active">AI Web Systems</span>
+              </div>
+            </div>
+            <div class="setting-row">
+              <span class="setting-label">TARGET GEOGRAPHIES (SOUTH INDIA FOCUS)</span>
+              <div class="pill-group">
+                <span class="mono-pill active">Bengaluru (KA)</span>
+                <span class="mono-pill active">Hyderabad (TS)</span>
+                <span class="mono-pill active">Chennai (TN)</span>
+                <span class="mono-pill active">Kochi (KL)</span>
+                <span class="mono-pill active">Remote (India / Global)</span>
+              </div>
+            </div>
+            <div class="setting-row">
+              <span class="setting-label">COMPENSATION FLOOR</span>
+              <span class="setting-val tabular" style="font-weight: 600;">₹18,00,000 – ₹35,00,000 LPA</span>
+              <span style="font-size: 11px; color: var(--text-muted);">Applications below threshold automatically filtered out</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN: Pipeline Audit & Anti-Detection Diagnostics -->
+      <div style="display: flex; flex-direction: column; gap: 20px;">
+        <!-- Card 3: Batch Execution Audit Table -->
+        <div class="config-card">
+          <div class="config-card-header">
+            <span class="label-caps" style="color: var(--text-primary);">DAILY PIPELINE EXECUTION AUDIT</span>
+            <div style="display: flex; gap: 8px;">
+              <button class="action-chip" onclick="triggerManualRunNow()">[ Trigger Manual Run Now ]</button>
+              <button class="action-chip" onclick="alert('Telemetry log downloaded.')">[ Download Log ]</button>
+            </div>
+          </div>
+          <div style="overflow-x: auto;">
+            <table class="audit-table">
+              <thead>
+                <tr>
+                  <th>TIME</th>
+                  <th>COMPANY &amp; ROLE</th>
+                  <th>MATCH</th>
+                  <th>CV ARTIFACT</th>
+                  <th>PLAYWRIGHT</th>
+                  <th>ACTION</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>07:31:14 IST</td>
+                  <td style="color: var(--text-primary); font-weight: 500;">Zerodha — Sr. Frontend</td>
+                  <td style="color: var(--text-primary);">94% [HIGH]</td>
+                  <td>CV_v4.2_Zerodha.pdf</td>
+                  <td>[VERIFIED_DOM]</td>
+                  <td><button class="action-chip" onclick="switchMainTab('command')">INSPECT</button></td>
+                </tr>
+                <tr>
+                  <td>07:32:40 IST</td>
+                  <td style="color: var(--text-primary); font-weight: 500;">Razorpay — Staff UI Arch</td>
+                  <td style="color: var(--text-primary);">91% [HIGH]</td>
+                  <td>CV_v4.2_Razorpay.pdf</td>
+                  <td>[STAGED]</td>
+                  <td><button class="action-chip" onclick="loadQueueItem(1)">LOAD</button></td>
+                </tr>
+                <tr>
+                  <td>07:33:12 IST</td>
+                  <td>Postman — Frontend Eng II</td>
+                  <td>88% [PASS]</td>
+                  <td>CV_v4.2_Postman.pdf</td>
+                  <td>[DISPATCHED]</td>
+                  <td><button class="action-chip" onclick="loadQueueItem(2)">INSPECT</button></td>
+                </tr>
+                <tr>
+                  <td>07:34:05 IST</td>
+                  <td>Swiggy — MERN Lead</td>
+                  <td>86% [PASS]</td>
+                  <td>CV_v4.2_Swiggy.pdf</td>
+                  <td>[QUEUED]</td>
+                  <td><button class="action-chip">QUEUE</button></td>
+                </tr>
+                <tr>
+                  <td>07:35:22 IST</td>
+                  <td>CRED — Web Systems</td>
+                  <td style="color: var(--text-primary);">92% [HIGH]</td>
+                  <td>CV_v4.2_Cred.pdf</td>
+                  <td>[VERIFIED_DOM]</td>
+                  <td><button class="action-chip">INSPECT</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Card 4: Anti-Detection & Diagnostics -->
+        <div class="config-card">
+          <div class="config-card-header">
+            <span class="label-caps" style="color: var(--text-primary);">ANTI-DETECTION TELEMETRY</span>
+            <span class="badge-tag">[PASS RATE: 100%]</span>
+          </div>
+          <div class="config-card-body" style="font-family: var(--font-mono); font-size: 11px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+              <div>
+                <span class="setting-label">BROWSER FINGERPRINT</span>
+                <div style="color: var(--text-primary); margin-top: 4px;">Chrome 122.0.0 (Linux x86_64)</div>
+                <div style="color: var(--text-muted); font-size: 10px;">WebGL & AudioContext Noise Injected</div>
+              </div>
+              <div>
+                <span class="setting-label">EGRESS RESIDENTIAL NODE</span>
+                <div style="color: var(--text-primary); margin-top: 4px;">Mumbai Fiber Node #42</div>
+                <div style="color: var(--text-muted); font-size: 10px;">Latency: 28ms · Zero Captcha Flagged</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- --------------------------------------------------------------------------
+       MODAL: COVER NOTE & RESUME PREVIEW
+       -------------------------------------------------------------------------- -->
+  <div class="modal-backdrop" id="modalBackdrop" onclick="if(event.target===this) closeModal()">
+    <div class="modal-box">
+      <div class="modal-head">
+        <span class="label-caps" id="modalTitle">MODAL PREVIEW</span>
+        <button class="action-chip" onclick="closeModal()">[ESC / CLOSE]</button>
+      </div>
+      <div class="modal-body" id="modalContent"></div>
+      <div class="modal-foot">
+        <button class="btn-secondary" onclick="closeModal()">Dismiss</button>
+        <button class="btn-primary" id="modalActionBtn" onclick="closeModal()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- --------------------------------------------------------------------------
+       CLIENT LOGIC & INTERACTION ENGINE
+       -------------------------------------------------------------------------- -->
+  <script>
+    // Live clock in IST
+    function updateClock() {
+      const now = new Date();
+      const options = { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+      const timeStr = new Intl.DateTimeFormat('en-GB', options).format(now);
+      const clockEl = document.getElementById('clockDisplay');
+      if (clockEl) clockEl.innerText = `${timeStr} IST`;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Theme Toggle (Dark Monochrome <-> Light Monochrome)
+    function toggleTheme() {
+      const html = document.documentElement;
+      const isDark = html.classList.contains('dark');
+      if (isDark) {
+        html.classList.remove('dark');
+        html.classList.add('light');
+        document.getElementById('themeLabel').innerText = 'DARK / INVERT';
+      } else {
+        html.classList.remove('light');
+        html.classList.add('dark');
+        document.getElementById('themeLabel').innerText = 'LIGHT / INVERT';
+      }
+    }
+
+    // Tab Switching
+    function switchMainTab(tab) {
+      const commandCenter = document.getElementById('commandCenterView');
+      const configView = document.getElementById('configView');
+      const tabCommand = document.getElementById('tabCommand');
+      const tabConfig = document.getElementById('tabConfig');
+
+      if (tab === 'command') {
+        commandCenter.style.display = 'flex';
+        configView.classList.remove('active');
+        tabCommand.classList.add('active');
+        tabConfig.classList.remove('active');
+      } else {
+        commandCenter.style.display = 'none';
+        configView.classList.add('active');
+        tabCommand.classList.remove('active');
+        tabConfig.classList.add('active');
+      }
+    }
+
+    // Queue Data for Abhijith AT
+    const queueData = [
+      {
+        company: "Zerodha",
+        role: "Senior Frontend Engineer",
+        stack: "React 18 / TypeScript / WebSockets",
+        location: "Bengaluru, KA (Hybrid)",
+        comp: "₹24–32 LPA",
+        match: "Match 94%",
+        cvFile: "Abhijith_AT_Zerodha_Tailored.pdf",
+        url: "zerodha.com/careers/apply",
+        spec: [
+          "Architect scalable web platforms using React 18, TypeScript, and state management.",
+          "High-frequency data streaming via WebSockets with <16ms UI frame budgets.",
+          "Deep understanding of browser rendering performance, DOM profiling, and WebAssembly.",
+          "Self-directed engineering ownership and zero-bloat architectural philosophy."
+        ],
+        candidate: [
+          "Led migration to concurrent React + Vite architecture, shaving 42% initial bundle size.",
+          "Engineered real-time orderbook rendering pipeline processing 25,000 updates/sec with zero jank.",
+          "Built custom Chrome DevTools profiler extensions; published open-source memory leak detection tools.",
+          "Engineered autonomous job orchestrator using Playwright headless execution scripts."
+        ]
+      },
+      {
+        company: "Razorpay",
+        role: "Staff UI Architect",
+        stack: "React / Design Systems / Microfrontends",
+        location: "Bengaluru, KA (Hybrid)",
+        comp: "₹28–36 LPA",
+        match: "Match 91%",
+        cvFile: "Abhijith_AT_Razorpay_Tailored.pdf",
+        url: "razorpay.com/jobs/staff-ui",
+        spec: [
+          "Scale merchant checkout UI across millions of concurrent payment transactions.",
+          "Design robust accessibility, keyboard-first navigation, and micro-animations.",
+          "Enforce zero runtime exceptions and resilient multi-gateway fallback states.",
+          "Mentor 12+ IC frontend engineers across core payments pods."
+        ],
+        candidate: [
+          "Architected multi-tenant financial checkout component system used by 45,000+ businesses.",
+          "Achieved 99.99% error-free payment step execution with automated headless test suites.",
+          "Engineered custom bundle-analyzer plugin cutting unused vendor chunks by 38%.",
+          "Deep familiarity with Razorpay's public API surface and React integration patterns."
+        ]
+      },
+      {
+        company: "Postman",
+        role: "Frontend Engineer II — API Client",
+        stack: "TypeScript / Electron / WebGL",
+        location: "Bengaluru, KA / Remote",
+        comp: "₹22–30 LPA",
+        match: "Match 88%",
+        cvFile: "Abhijith_AT_Postman_Tailored.pdf",
+        url: "postman.com/careers/fe-client",
+        spec: [
+          "Optimize desktop API client rendering large GraphQL/REST responses (>50MB payload parsing).",
+          "Maintain rich Monaco code editors with syntax highlighting and live autocompletion.",
+          "Collaborate with distributed protocols team across India and US time zones."
+        ],
+        candidate: [
+          "Built custom JSON streaming parser handling 100MB+ documents in web workers.",
+          "Integrated Monaco editor with custom language service for schema validation.",
+          "Active open-source contributor to Developer Tooling ecosystems."
+        ]
+      }
+    ];
+
+    let currentQueueIndex = 0;
+
+    function renderCurrentQueueItem() {
+      const item = queueData[currentQueueIndex];
+      document.getElementById('queueItemTag').innerText = `DISPATCH QUEUE [ITEM ${currentQueueIndex + 1} OF ${queueData.length}]`;
+      document.getElementById('targetJobTitle').innerText = `${item.company} — ${item.role}`;
+      document.getElementById('targetStack').innerText = item.stack;
+      document.getElementById('targetLocation').innerText = item.location;
+      document.getElementById('targetComp').innerText = item.comp;
+      document.getElementById('targetMatch').innerText = item.match;
+      document.getElementById('cvArtifactTitle').innerText = item.cvFile;
+      document.getElementById('targetUrl').innerText = item.url;
+
+      // Render Specs
+      const specEl = document.getElementById('roleSpecCol');
+      specEl.innerHTML = item.spec.map((s, idx) => `
+        <div class="matrix-row-item">
+          <span class="matrix-num">0${idx+1}</span>
+          <div>${s}</div>
+        </div>
+      `).join('');
+
+      // Render Candidate
+      const candEl = document.getElementById('candidateMatchCol');
+      candEl.innerHTML = item.candidate.map((c) => `
+        <div class="matrix-row-item">
+          <span class="matrix-check">[✓]</span>
+          <div>${c}</div>
+        </div>
+      `).join('');
+    }
+
+    function loadQueueItem(index) {
+      currentQueueIndex = index;
+      renderCurrentQueueItem();
+      switchMainTab('command');
+    }
+
+    function rejectQueueItem() {
+      if (currentQueueIndex < queueData.length - 1) {
+        currentQueueIndex++;
+        renderCurrentQueueItem();
+        appendAgentLog(`Skipped previous target. Loaded next candidate target: ${queueData[currentQueueIndex].company}.`);
+      } else {
+        alert("All queued items processed for today's run.");
+      }
+    }
+
+    // Dispatch Flow Simulation
+    function dispatchApplication() {
+      const btn = document.getElementById('dispatchBtn');
+      const item = queueData[currentQueueIndex];
+      
+      btn.innerHTML = `<span>Dispatching via Playwright...</span>`;
+      btn.style.opacity = '0.6';
+
+      appendAgentLog(`[PLAYWRIGHT EXECUTION STARTED] Spawning headless Chromium instance for ${item.company} application form.`);
+      
+      setTimeout(() => {
+        appendAgentLog(`[PLAYWRIGHT DOM] Form fields filled: Name: Abhijith AT, Email: abhijith@example.com, File: ${item.cvFile}.`);
+      }, 900);
+
+      setTimeout(() => {
+        appendAgentLog(`[PLAYWRIGHT VERIFIED] Submission POST completed with HTTP 200 OK. Application ID: #APP-${Math.floor(100000 + Math.random() * 900000)}.`);
+        alert(`Application successfully submitted to ${item.company} (${item.role})! Playwright screenshot saved.`);
+        btn.innerHTML = `<span>Approve &amp; Dispatch Application</span><span class="label-caps">-&gt;</span>`;
+        btn.style.opacity = '1';
+        
+        if (currentQueueIndex < queueData.length - 1) {
+          currentQueueIndex++;
+          renderCurrentQueueItem();
+        }
+      }, 2000);
+    }
+
+    // Chat handling
+    function sendAgentMessage() {
+      const input = document.getElementById('agentInput');
+      const text = input.value.trim();
+      if (!text) return;
+
+      const chatStream = document.getElementById('chatStream');
+
+      // Add user bubble
+      const userBubble = document.createElement('div');
+      userBubble.className = 'user-bubble';
+      userBubble.innerText = text;
+      chatStream.appendChild(userBubble);
+      input.value = '';
+
+      chatStream.scrollTop = chatStream.scrollHeight;
+
+      // Simulate agent response
+      setTimeout(() => {
+        const agentBubble = document.createElement('div');
+        agentBubble.className = 'agent-bubble';
+        agentBubble.innerHTML = `
+          <div class="bubble-head">
+            <div class="bubble-title">
+              <span style="width: 4px; height: 4px; background: var(--text-primary); display: inline-block;"></span>
+              ORCHESTRATOR_RESPONSE
+            </div>
+            <div class="label-caps" style="color: var(--text-muted);">${new Date().toLocaleTimeString('en-GB', { hour12: false })}</div>
+          </div>
+          <div class="bubble-body">
+            Acknowledged command: "${text}". Running verification query across target companies in South India (Bengaluru, Hyderabad, Chennai).
+          </div>
+        `;
+        chatStream.appendChild(agentBubble);
+        chatStream.scrollTop = chatStream.scrollHeight;
+      }, 700);
+    }
+
+    function handleChipClick(chipText) {
+      document.getElementById('agentInput').value = chipText;
+      sendAgentMessage();
+    }
+
+    function appendAgentLog(msg) {
+      const chatStream = document.getElementById('chatStream');
+      const logLine = document.createElement('div');
+      logLine.style.cssText = "border-left: 2px solid var(--border-hairline-bright); padding-left: 10px; font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);";
+      logLine.innerText = `[${new Date().toLocaleTimeString('en-GB', { hour12: false })}] ${msg}`;
+      chatStream.appendChild(logLine);
+      chatStream.scrollTop = chatStream.scrollHeight;
+    }
+
+    function triggerManualRunNow() {
+      alert("Manual morning pipeline triggered! Scraping jobs in Bengaluru, Hyderabad, Chennai & Kochi...");
+      switchMainTab('command');
+      appendAgentLog("Triggered manual hunt across Hasjob, LinkedIn API, Naukri Premier, and direct ATS career sites.");
+    }
+
+    // Modal Helpers
+    function openModal(title, content) {
+      document.getElementById('modalTitle').innerText = title;
+      document.getElementById('modalContent').innerText = content;
+      document.getElementById('modalBackdrop').classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('modalBackdrop').classList.remove('active');
+    }
+
+    function previewCoverNoteModal() {
+      const note = `Subject: Application: Senior Frontend Engineer — Abhijith AT
+
+Hi Zerodha Careers Team,
+
+I've followed Zerodha's engineering culture closely—especially your zero-bloat, self-directed ethos and refusal to adopt unnecessary complexity.
+
+As a Frontend Engineer with over 4 years of experience specializing in high-concurrency React architectures, performance profiling, and WebSockets data streaming:
+- Shaved 42% bundle overhead migrating core trading dashboards to modern React 18 concurrent primitives.
+- Built low-latency rendering pipelines handling 25,000 orderbook updates per second within a 16ms frame budget.
+- Developed automated browser validation tooling and memory leak diagnostics.
+
+I'm based in South India (open to Bengaluru) and would appreciate the opportunity to discuss how I can contribute to Zerodha's trading interfaces.
+
+Resume attached: Abhijith_AT_Zerodha_Tailored.pdf
+Portfolio & GitHub: github.com/abhijith-at
+
+Warm regards,
+Abhijith AT`;
+      openModal("COVER NOTE PREVIEW / EDIT", note);
+    }
+
+    function previewResumeModal() {
+      const cvText = `ABHIJITH AT — CURRICULUM VITAE
+Location: South India (Bengaluru / Kerala / Hyderabad) | Relocation: Immediate
+Role: Senior Frontend Engineer / Full Stack MERN Systems
+Target Firm: Zerodha Broking Ltd
+
+SUMMARY:
+Performance-driven Web Systems Engineer with deep expertise in React 18 concurrent architecture, TypeScript, WebSockets high-frequency streaming, and automated browser testing using Playwright.
+
+CORE SKILLS:
+- Languages: TypeScript, JavaScript (ESNext), HTML5/CSS3, SQL, Go (basic)
+- Frameworks & Libraries: React 18, Next.js, Node.js, Express, Redux Toolkit, Zustand, Tailwind
+- Performance & Systems: Web Workers, WebSockets, Chrome DevTools Profiling, Vite, WebAssembly
+- Automation & QA: Playwright Headless Automation, Jest, Vitest, CI/CD GitHub Actions
+
+EXPERIENCE & IMPACT:
+Lead Frontend IC | High-Throughput Financial Systems
+- Engineered concurrent orderbook visualizer processing 25,000 state mutations/sec.
+- Eliminated all jank and frame drops across low-end Android mobile browsers.
+- Implemented automated Playwright verification suites achieving 100% test coverage on critical payment flows.`;
+      openModal("TAILORED LATEX CV ARTIFACT", cvText);
+    }
+
+    function openOutreachModal() {
+      const msg = `OUTREACH PIPELINE — STRATEGY SUMMARY:
+1. Recruiter identification for Zerodha & Razorpay tech leads in Bengaluru.
+2. Direct LinkedIn message delivery scheduled for 10:15 AM (highest open rate).
+3. Plain-text pitch strictly adhering to monochrome minimalism with zero fluff or emojis.
+Status: Staged for dispatch upon candidate approval.`;
+      openModal("PHASE 05: RECRUITER OUTREACH PREVIEW", msg);
+    }
+  </script>
+</body>
+</html>

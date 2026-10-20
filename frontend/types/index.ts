@@ -3,6 +3,7 @@ export type AppView =
   | "auth"
   | "onboarding"
   | "dashboard"
+  | "agent"
   | "profile"
   | "projects"
   | "add-job"

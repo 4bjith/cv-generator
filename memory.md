@@ -1,24 +1,24 @@
 # AI CV Maker — Development Memory
 
-**Last updated:** 2026-10-18  
-**Project status:** Phase 7 complete; AI configuration hardened with header authentication, transient retry policy, production mock prohibition, and safe readiness observability; 109 backend and 99 frontend tests passing with 0 TypeScript errors.
+**Last updated:** 2026-10-20  
+**Project status:** Phase 9 complete; Personal Autonomous AI Job Acquisition Agent fully implemented with multi-source fresher-friendly discovery, Playwright browser automation, QA Memory Bank, Recruiter Outreach multiplier, daily APScheduler (07:00 AM IST), and comprehensive Next.js command dashboard; 115 backend and 99 frontend tests passing with 0 TypeScript errors.
 
 ## Purpose
 
-AI CV Maker is an AI-powered job application assistant. It maintains a structured, evidence-backed professional profile for a candidate, understands a target job, compares job requirements with verified candidate evidence, asks for missing information, and generates tailored application materials.
+AI CV Maker is an AI-powered job application assistant and personal autonomous job acquisition agent. It maintains a structured, evidence-backed professional profile for candidate Abhijith AT, discovers opportunities across official career pages and public ATS feeds, matches job requirements with verified candidate evidence without fabrication, answers application forms deterministically or with supervision, executes Playwright browser submissions, generates tailored CV snapshots and cover letters, drafts recruiter visibility outreach, tracks applications, and delivers morning briefing reports.
 
 The product is not only a resume generator. Its differentiator is the intersection of:
 
 ```text
 Candidate Knowledge Base
         +
-Job Intelligence
+Autonomous Job Discovery & Fresher Evaluation
         +
-Evidence-based Matching
+Evidence-based Matching & Document Tailoring
         +
-AI Generation
+Playwright Application Execution & QA Memory
         +
-Application Tracking
+Recruiter Visibility & Application Tracking
 ```
 
 Generated content must be truthful, ATS-friendly, editable, versioned, and traceable to candidate evidence.
@@ -27,6 +27,8 @@ Generated content must be truthful, ATS-friendly, editable, versioned, and trace
 
 - [`FRD.md`](./FRD.md) — complete product requirements and MVP definition.
 - [`CODING_AGENT_CONTEXT.md`](./CODING_AGENT_CONTEXT.md) — architecture, implementation rules, security principles, and agent behavior.
+- [`autonomous_job_application_system_architecture.md`](file:///C:/Users/abhij/.gemini/antigravity-ide/brain/945ae54e-999b-421d-a521-2d0145e94c12/autonomous_job_application_system_architecture.md) — full architectural blueprint for the autonomous agent.
+- [`personal_job_acquisition_agent_audit_and_plan.md`](file:///C:/Users/abhij/.gemini/antigravity-ide/brain/945ae54e-999b-421d-a521-2d0145e94c12/personal_job_acquisition_agent_audit_and_plan.md) — audit findings, design decisions, and implementation plan.
 
 ## Non-negotiable product rules
 
@@ -36,17 +38,17 @@ Generated content must be truthful, ATS-friendly, editable, versioned, and trace
 4. Ask the user when information is missing or ambiguous.
 5. Keep AI-generated content editable and do not silently modify permanent profile data.
 6. Keep Gemini behind an internal provider abstraction with configurable model names.
-7. Do not build automatic job application submission for the MVP.
+7. External applications must default to Supervised Mode (pre-fills form, captures screenshot, awaits 1-click submit) with optional Autonomous Submit toggle and a Global Emergency Stop.
 
 ## Target architecture
 
 - Frontend: Next.js, TypeScript, App Router, Tailwind CSS, shadcn/ui, TanStack Query, React Hook Form, Zod.
-- Backend: Python, FastAPI, Pydantic, SQLAlchemy, Alembic, Pytest.
+- Backend: Python, FastAPI, Pydantic, SQLAlchemy, Alembic, Pytest, Playwright, APScheduler.
 - Data and infrastructure: PostgreSQL + pgvector, Redis, S3-compatible storage, Docker.
 - AI: Google Gemini through an internal `AIProvider` interface for text, structured output, vision, embeddings, and token counting.
 - Backend layering: API → service → repository → database. AI belongs in services, not route handlers.
 
-## MVP feature map
+## Feature map
 
 | Area | Status | Notes |
 | --- | --- | --- |
@@ -54,19 +56,23 @@ Generated content must be truthful, ATS-friendly, editable, versioned, and trace
 | Frontend foundation | Complete | Next.js 16.3.8 App Router with TypeScript, Tailwind CSS, ESLint, and npm. |
 | Backend foundation | Complete | FastAPI 0.142.2 with versioned `/api/v1/health`, structured JSON logging, correlation IDs, centralized exception handling, security middlewares, Dockerfile, and pytest suite. |
 | Authentication foundation | Complete | JWT access/refresh token pairs, bcrypt hashing, stateless API routes (`/api/v1/auth/{register,login,me,refresh,logout}`), `get_current_user` dependency, and repository pattern abstraction. |
-| Candidate profile / Knowledge Base | Complete | Master career knowledge base domain model, PostgreSQL schema with Alembic migration, normalized child entities, structured metrics, ProfileService, readiness scoring, TanStack Query integration, and full-stack responsive UI. |
+| Candidate profile / Knowledge Base | Complete | Master career knowledge base domain model, PostgreSQL schema with Alembic migration, normalized child entities, structured metrics, ProfileService, readiness scoring, TanStack Query integration, and full-stack responsive UI. Pre-seeded with Abhijith AT's verified profile data. |
 | CV import and parsing | Not started | PDF, DOCX, TXT, and image inputs; preserve original files; require review before persistence. |
-| GitHub integration | Not started | OAuth, selective repository analysis, project extraction, and evidence mapping. |
+| GitHub & Portfolio integration | Complete | Verified links extracted (GitHub: `https://github.com/4bjith/`, Portfolio: `https://4bjith.github.io/Portfolio-Website/`, LinkedIn: `https://www.linkedin.com/in/abhijith-4bjith/`). |
 | Job input and analysis | Complete | Saved job targets with full CRUD, employment type capture, modular extraction pipeline (mandatory vs preferred, seniority, categories, keywords), and validation. |
+| Autonomous Job Discovery | Complete | Multi-source adapters (Direct ATS Greenhouse/Lever boards, Jobicy remote feeds, Kerala tech hubs Kozhikode/Kochi/Kannur). Deduplication by title/company/URL hash. |
+| Intelligent Fresher Evaluation | Complete | Fresher-friendly scoring engine: evaluates skills (React, Node, Express, MongoDB, JavaScript), recognizes equivalent project experience, handles Kerala & Remote locations, outputs explainable score & rationale. |
 | Requirement matching | Complete | Canonical `JobRequirementItem`, evidence-grounded matching against candidate knowledge base, strict non-hallucination, full evidence traceability, gap distinction, and non-mutating CV version snapshot creation. |
 | Clarification engine & AI tailoring | Complete | Resumable sessions, prioritized questions, evidence provenance tracking (`candidate_clarification`, `unverified`), profile promotion, zero-hallucination tailoring, independent `CVVersion` snapshot creation, template switching, PDF/DOCX export compatibility, and full-stack UI. |
 | CV generation and ATS analysis | Complete | AI CV tailoring, 6 template renderers, PDF/DOCX exporters, explainable ATS scoring (0-100), keyword density auditing, and evidence-grounded keyword optimization complete. |
 | Cover email / cover letter | Complete | Grounded in CandidateProfile & confirmed clarifications; configurable tone, length, instructions; independent draft editing, duplication, version-preserving regeneration; multi-format PDF/DOCX exports. |
-| Recruiter message | Not started | LinkedIn, recruiter outreach, and referral variants. |
-| Interview preparation | Not started | Job-specific technical, project, experience, behavioral, and company questions. |
-| Application tracker | Not started | Status history, notes, dates, job data, and document versions. |
-| Versioning and auditability | Complete | Point-in-time immutable CV snapshots, non-mutating source profiles, duplicate generation protection, and version-specific presentation settings. |
-| Testing and production hardening | Complete | 109/109 backend pytest tests passing, 99/99 frontend vitest tests passing, 0 TypeScript errors, production build verified. |
+| Autonomous Application Engine | Complete | Playwright browser automation (`playwright_runner.py`), headless form navigation, heuristic field mapping (name, email, phone, links, resume upload), QA Memory Bank resolution, screenshot capture, confirmation detection, and dual Supervised/Autonomous submission modes. |
+| QA Memory Bank | Complete | Persistent repository of candidate answers for recurring application questions (work authorization, notice period, relocation, salary expectations). Auto-learns from user answers. |
+| Recruiter Outreach & Visibility | Complete | AI recruiter intelligence: generates 300-char LinkedIn connect notes, concise cold emails, referral requests, and schedules Day 4 & Day 9 response-aware follow-ups. |
+| Application Tracker & Follow-Ups | Complete | Unified pipeline tracking statuses (`discovered`, `shortlisted`, `tailored`, `prefilled`, `submitted`, `confirmed`, `interview`, `rejected`), submission evidence, screenshots, and follow-up reminders. |
+| Daily Agent Scheduler & Morning Report | Complete | APScheduler running daily at 07:00 AM IST. Discovers jobs, evaluates, tailors documents, prepares applications, drafts outreach, and generates comprehensive morning briefing reports. |
+| Agent Command Dashboard | Complete | Dedicated Next.js command center with tabs for Morning Briefing, Discovered Jobs, Applications Pipeline, Recruiter Outreach Studio, QA Memory Bank, and Preferences. Includes Emergency Stop & Run Agent Now controls. |
+| Testing and production hardening | Complete | 115/115 backend pytest tests passing, 99/99 frontend vitest tests passing, 0 TypeScript errors, Next.js production build verified. |
 
 ## Recommended implementation order
 
@@ -535,5 +541,70 @@ If a feature is only partially complete, keep it marked `In progress` and list t
   - Frontend: **99 passed, 0 failed** out of 99 vitest tests across 17 test suites.
   - TypeScript: **0 errors** (`npx tsc --noEmit`).
   - Production Build: Next.js Turbopack build compiled successfully with **0 errors**.
+
+### 2026-10-20 — Phase 9: Personal Autonomous AI Job Acquisition Agent (Abhijith AT)
+
+- **Domain Models & Database Architecture (`backend/app/models/autonomous_agent.py`)**:
+  - Implemented 7 SQLAlchemy 2.x async models with `lazy="selectin"` relationship loading and PostgreSQL JSONB / SQLite JSON cross-compatibility:
+    - `JobSearchProfile`: Personal search configuration for Abhijith AT (target roles, locations, experience level, remote preference, daily discovery cap, daily application cap, auto_submit_enabled, emergency_stop).
+    - `DiscoveredJob`: Normalized job postings across multi-source adapters with URL hashing deduplication, source provenance (`ats_direct`, `jobicy_api`, `kerala_tech_leads`), match scores, fresher eligibility badges, and explainable evaluation rationale.
+    - `QAMemoryBankItem`: Question-answer memory bank for recurring application forms (work authorization, notice period, relocation preferences, salary expectations) with confidence ratings and auto-learning from candidate inputs.
+    - `ApplicationRecord`: Full lifecycle tracker for job applications with statuses (`discovered`, `shortlisted`, `tailored`, `prefilled`, `submitted`, `confirmed`, `interview`, `rejected`), submission mode (`supervised`, `autonomous`), confirmation reference numbers, error reasons, and Playwright verification screenshot paths.
+    - `RecruiterOutreach`: High-visibility HR outreach generator with channel variants (LinkedIn 300-char note, direct cold email, referral request), outreach status tracking (`drafted`, `pending_review`, `sent`, `replied`), and target job association.
+    - `FollowUpSchedule`: Response-aware automated follow-up manager scheduling Day 4 and Day 9 check-ins, auto-canceling on employer response or rejection.
+    - `AgentDailyReport`: Morning briefing summaries with run metrics (discovered, shortlisted, applications prepared/submitted, recruiter messages drafted, follow-ups due, unresolved actions).
+  - Added Alembic migration `0010_autonomous_agent.py` creating tables, foreign keys, and indexes.
+- **Multi-Source Discovery & Fresher-Friendly Evaluation**:
+  - Direct ATS adapter (`direct_ats_adapter.py`): Scrapes and parses public Greenhouse and Lever job feeds.
+  - Aggregator adapter (`aggregator_adapter.py`): Integrates Jobicy remote developer feeds and Kerala tech companies across Kochi, Kozhikode, and Kannur.
+  - Evaluation service (`evaluation_service.py`): Deterministic rules + AI matching tailored for Abhijith AT (MERN Stack, React, Node.js, Express, MongoDB, JavaScript). Recognizes equivalent personal project experience (Portfolio, GitHub) to ensure fresher opportunities are never disqualified merely for lacking multi-year commercial experience.
+- **Playwright Application Automation & QA Resolver**:
+  - Form automation runner (`playwright_runner.py`): Launches headless Chromium, navigates to application URLs, maps fields heuristically (name, email, phone, LinkedIn, GitHub, portfolio), resolves application questions using `QAMemoryBank`, attaches tailored CV PDF, and captures pre-submission screenshots.
+  - Dual Execution Modes: Defaults to **Supervised Mode** (fills form, captures screenshot, awaits 1-click submit approval) with user-configurable **Autonomous Submit** toggle and **Emergency Stop** instant cutoff.
+  - Outcome Verification: Verifies submission success, extracts confirmation IDs, and classifies failures.
+- **Recruiter Outreach Multiplier & Follow-Up Engine**:
+  - Recruiter service (`recruiter_service.py`): Generates grounded, 300-character LinkedIn connection notes and concise cold emails citing actual candidate achievements (e.g., MERN projects) without spam or relationship fabrication.
+  - Schedules Day 4 and Day 9 follow-ups that automatically cancel if an employer response or rejection is detected.
+- **Daily APScheduler & Orchestration Service**:
+  - Autonomous agent service (`autonomous_agent_service.py`): Coordinates full cycle: profile seeding, multi-source discovery, fresher evaluation, automated document tailoring (CV & cover letter), application preparation, outreach drafting, and daily report generation.
+  - Background scheduler (`scheduler.py`): APScheduler cron scheduled daily at 07:00 AM IST with lifecycle management in FastAPI lifespan.
+- **REST Endpoints (`backend/app/api/routes/autonomous_agent.py`)**:
+  - Mounted at `/api/v1/agent`:
+    - `GET /profile`, `PUT /profile`: View and edit personal search preferences.
+    - `POST /emergency-stop`, `POST /resume`: Instant automation cutoff and resume.
+    - `POST /run-cycle`: Trigger full autonomous run immediately.
+    - `GET /jobs`: Discovered jobs list with status, role, and location filtering.
+    - `POST /jobs/{id}/shortlist`, `POST /jobs/{id}/reject`: Manual curation overrides.
+    - `GET /applications`: Applications pipeline tracking with status filters.
+    - `POST /applications/{id}/submit`: 1-click supervised submission approval.
+    - `GET /qa-bank`, `POST /qa-bank`: View and add QA memory bank items.
+    - `GET /outreach`, `POST /outreach/{id}/send`: Recruiter message review and dispatch.
+    - `GET /reports/latest`: Latest morning briefing report.
+- **Frontend Agent Command Dashboard (`frontend`)**:
+  - TypeScript types (`types/agent.ts`) and API client (`services/agent/agent.api.ts`).
+  - Agent Dashboard component (`agent-dashboard.tsx`) featuring 6 specialized command views:
+    - **Morning Briefing**: Daily agent report with stats cards, top opportunities, and quick action items.
+    - **Discovered Jobs**: Real-time job stream with fresher match badges, score breakdown, and shortlist/reject actions.
+    - **Applications Pipeline**: Visual tracker with status badges, submission evidence screenshots, and 1-click submit approvals.
+    - **Recruiter Outreach Studio**: HR visibility multiplier showing tailored LinkedIn notes and cold email drafts with copy-to-clipboard and dispatch tracking.
+    - **QA Memory Bank**: Pre-seeded knowledge repository with Abhijith's confirmed application answers and editor.
+    - **Search & Automation Preferences**: Full control over target roles, locations, daily caps, submission mode, and Emergency Stop.
+  - App shell navigation updated with "AI Agent" link and robot badge in `app-shell.tsx` and routed in `app/page.tsx`.
+- **Automated Tests & Quality Verification**:
+  - Backend: **115/115 tests passing** (`pytest`) including 6 comprehensive Phase 9 test cases in `tests/test_autonomous_agent.py`:
+    - `test_job_search_profile_defaults_and_update`
+    - `test_emergency_stop_and_resume`
+    - `test_fresher_friendly_evaluation`
+    - `test_qa_memory_bank_resolution`
+    - `test_recruiter_outreach_generation_and_length_constraint`
+    - `test_full_autonomous_cycle_execution`
+  - Frontend: **99/99 tests passing** (`vitest`).
+  - TypeScript: **0 errors** (`npx tsc --noEmit`).
+  - Production Build: Next.js Turbopack build compiled successfully with **0 errors**.
+- **Candidate Relocation & South India Expansion**:
+  - Expanded candidate target locations to comprehensively cover South India: **Karnataka** (Bangalore / Bengaluru), **Telangana** (Hyderabad), **Tamil Nadu** (Chennai, Coimbatore), **Kerala** (Kochi, Kozhikode, Kannur, Thiruvananthapuram), and **Remote India**.
+  - Synchronized across `JobSearchProfile` model, Pydantic schemas, `QAMemoryBankItem` relocation seeds, evaluation service rules, and aggregator discovery adapter.
+  - Added interactive Preferences editor modal/form in `frontend/components/agent/agent-dashboard.tsx` with quick one-click preset buttons for all major South Indian tech hubs.
+
 
 
