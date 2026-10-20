@@ -60,6 +60,51 @@ class JobEvaluationService:
             )
 
         # ----------------------------------------------------------------------
+        # 2b. Minimum Salary Range Check (Floor: ₹18,000/month / ₹2.16L+ LPA)
+        # ----------------------------------------------------------------------
+        if search_profile.min_salary:
+            min_salary_monthly = search_profile.min_salary
+            min_annual_lpa = round((min_salary_monthly * 12) / 100000.0, 2)  # 18000 * 12 = 2.16 LPA
+            import re
+            
+            # Monthly patterns e.g. "12,000/month", "15k/month", "stipend: 10000 pm"
+            monthly_patterns = [
+                r"(\b[0-9]{1,2}(?:,[0-9]{3})?|\b[0-9]{1,2}k)\s*(?:/month|pm|per month)",
+                r"(?:stipend|salary)\s*[:=]?\s*(?:rs\.?|inr|₹)?\s*([0-9]{1,2}(?:,[0-9]{3})?|\b[0-9]{1,2}k)\s*(?:/month|pm|per month)?",
+            ]
+            for pat in monthly_patterns:
+                matches = re.findall(pat, desc_lower)
+                for m in matches:
+                    try:
+                        clean_m = m.replace(",", "").strip()
+                        if clean_m.endswith("k"):
+                            val = int(float(clean_m[:-1]) * 1000)
+                        else:
+                            val = int(clean_m)
+                        if 1000 <= val < min_salary_monthly:
+                            return (
+                                20.0,
+                                "ineligible",
+                                f"Rejected: Stated compensation (₹{val:,}/month) is below candidate floor (₹{min_salary_monthly:,}/month).",
+                            )
+                    except ValueError:
+                        pass
+
+            # Annual CTC patterns e.g. "1.5 lpa", "1.8 - 2.0 lakh", "2.0 lpa"
+            lpa_matches = re.findall(r"(\b[0-9]+(?:\.[0-9]+)?)\s*(?:lpa|lakh|lac)", desc_lower)
+            for m in lpa_matches:
+                try:
+                    val_lpa = float(m)
+                    if 0.5 <= val_lpa < min_annual_lpa:
+                        return (
+                            20.0,
+                            "ineligible",
+                            f"Rejected: Stated annual CTC ({val_lpa} LPA) is below candidate minimum floor of ₹{min_salary_monthly:,}/month ({min_annual_lpa} LPA).",
+                        )
+                except ValueError:
+                    pass
+
+        # ----------------------------------------------------------------------
         # 3. Role Title Alignment (40 points max)
         # ----------------------------------------------------------------------
         role_score = 0.0

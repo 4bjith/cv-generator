@@ -91,13 +91,13 @@ class JobSearchProfile(Base, TimestampMixin):
     is_remote_prioritized: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     include_internships: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     fresher_mode: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-    min_salary: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    min_salary: Mapped[Optional[int]] = mapped_column(Integer, default=18000, nullable=True)
     max_job_age_days: Mapped[int] = mapped_column(Integer, default=7, nullable=False)
 
     # Automation Policies & Controls
     daily_application_cap: Mapped[int] = mapped_column(Integer, default=10, nullable=False)
     cron_schedule: Mapped[str] = mapped_column(String(50), default="0 7 * * *", nullable=False)
-    auto_submit_enabled: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    auto_submit_enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     emergency_stopped: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 

@@ -56,11 +56,11 @@ class JobSearchProfileBase(BaseModel):
     is_remote_prioritized: bool = True
     include_internships: bool = True
     fresher_mode: bool = True
-    min_salary: Optional[int] = None
+    min_salary: Optional[int] = 18000
     max_job_age_days: int = 7
     daily_application_cap: int = 10
     cron_schedule: str = "0 7 * * *"
-    auto_submit_enabled: bool = False
+    auto_submit_enabled: bool = True
     is_active: bool = True
     emergency_stopped: bool = False
 

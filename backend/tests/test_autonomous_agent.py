@@ -40,18 +40,19 @@ async def test_job_search_profile_personal_defaults(async_client: AsyncClient):
     assert "Tamil Nadu" in data["target_locations"]
     assert data["fresher_mode"] is True
     assert data["is_remote_prioritized"] is True
-    assert data["auto_submit_enabled"] is False  # Safe supervised mode by default
+    assert data["min_salary"] == 18000  # Minimum salary floor of ₹18,000/month
+    assert data["auto_submit_enabled"] is True  # Full automation enabled by default
     assert data["emergency_stopped"] is False
 
-    # Update preferences
+    # Update preferences (e.g. toggle to supervised mode and back)
     update_resp = await async_client.put(
         "/api/v1/agent/profile",
         headers=headers,
-        json={"daily_application_cap": 15, "auto_submit_enabled": True},
+        json={"daily_application_cap": 15, "auto_submit_enabled": False},
     )
     assert update_resp.status_code == 200
     assert update_resp.json()["daily_application_cap"] == 15
-    assert update_resp.json()["auto_submit_enabled"] is True
+    assert update_resp.json()["auto_submit_enabled"] is False
 
 
 @pytest.mark.asyncio

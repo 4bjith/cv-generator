@@ -51,24 +51,24 @@ export function AgentCommandCenter({ onToast }: AgentCommandCenterProps) {
     {
       id: "msg-1",
       sender: "system",
-      text: "[08:30:12] Crawled 14 job portals across South India (Bengaluru, Hyderabad, Chennai).",
+      text: "[08:30:12] Crawled job portals across South India (Bengaluru, Hyderabad, Chennai, Kochi, Kerala). Minimum salary floor enforced: >= ₹18,000/month.",
       timestamp: "08:30:12 IST",
     },
     {
       id: "msg-2",
       sender: "agent",
-      text: "Morning pipeline completed for South India (Bengaluru, Hyderabad, Chennai). Identified top matches for Abhijith AT. Tailored CV and verified Playwright submission form. Awaiting your approval.",
+      text: "Autonomous morning pipeline completed. Evaluated candidate opportunities for Abhijith AT. Minimum compensation criteria strictly verified (>= ₹18,000/month starting / 2.16L+ LPA). Fully autonomous mode active: applications are automatically tailored and submitted via Playwright without manual intervention.",
       timestamp: "08:35:40 IST",
       meta: {
-        confidence: 94,
-        alignment: 0.96,
-        details: "Matched criteria: React concurrency, performance profiling, high-frequency UI systems.",
+        confidence: 96,
+        alignment: 0.98,
+        details: "Salary verified >= ₹18,000/month. Matched criteria: React concurrency, performance profiling, high-frequency UI systems.",
       },
     },
     {
       id: "msg-3",
       sender: "system",
-      text: "[08:36:19] Headless Chromium socket bound. Form payload staged at /tmp/z_payload_7a8.json",
+      text: "[08:36:19] Headless Chromium socket bound. Auto-submit flag: TRUE. Unattended dispatch pipeline engaged.",
       timestamp: "08:36:19 IST",
     },
   ]);
@@ -243,6 +243,29 @@ export function AgentCommandCenter({ onToast }: AgentCommandCenterProps) {
     }
   };
 
+  // Handler: Toggle Full Automation / Auto-Submit
+  const handleToggleAutoSubmit = async (enabled: boolean) => {
+    try {
+      const updated = await agentApi.updateProfile({ auto_submit_enabled: enabled });
+      setProfile(updated);
+      appendMessage(
+        "system",
+        `[${timeStr}] [PROTOCOL UPDATE] Auto-dispatch gating set to: ${
+          enabled ? "FULLY UNATTENDED AUTO-DISPATCH (ZERO MANUAL GATING)" : "SUPERVISED GATE (MANUAL APPROVAL)"
+        }.`
+      );
+      if (onToast) {
+        onToast(
+          "Automation Policy Updated",
+          enabled ? "Full automation active (auto-submit on)" : "Supervised mode active",
+          "success"
+        );
+      }
+    } catch {
+      if (profile) setProfile({ ...profile, auto_submit_enabled: enabled });
+    }
+  };
+
   // Helper: Append message to chat stream
   const appendMessage = (
     sender: "agent" | "user" | "system",
@@ -310,8 +333,8 @@ export function AgentCommandCenter({ onToast }: AgentCommandCenterProps) {
               AGENT / AUTONOMOUS JOB RUNNER
             </span>
           </div>
-          <span className="font-mono text-[10px] text-[#71717a] border border-[#e4e4e7] px-1.5 py-0.5 bg-[#f4f4f5]">
-            [ACTIVE]
+          <span className="font-mono text-[10px] text-[#09090b] border border-[#09090b] px-1.5 py-0.5 bg-[#f4f4f5] font-semibold">
+            {profile?.auto_submit_enabled !== false ? "[ONLINE / FULLY AUTONOMOUS]" : "[SUPERVISED GATE]"}
           </span>
         </div>
 
@@ -359,7 +382,9 @@ export function AgentCommandCenter({ onToast }: AgentCommandCenterProps) {
           <span className="hidden lg:inline text-[#d4d4d8]">|</span>
           <span className="hidden lg:inline">3 Tailored</span>
           <span className="hidden lg:inline text-[#d4d4d8]">|</span>
-          <span className="text-[#09090b] font-medium">1 Pending Review</span>
+          <span className="text-[#09090b] font-medium">
+            {profile?.auto_submit_enabled !== false ? "0 Gate Pauses (Full Auto)" : "1 Pending Review"}
+          </span>
           <span className="text-[#d4d4d8]">|</span>
           <span className="text-[#09090b]">{timeStr}</span>
         </div>
@@ -566,7 +591,7 @@ export function AgentCommandCenter({ onToast }: AgentCommandCenterProps) {
                     <span>{currentJob?.location || "Bengaluru, KA (Hybrid)"}</span>
                     <span className="text-[#d4d4d8]">·</span>
                     <span className="text-[#09090b] font-medium tabular-nums">
-                      {currentJob?.fit_reasoning ? "₹24–32 LPA" : "₹24–32 LPA"}
+                      {profile?.min_salary ? `₹${profile.min_salary.toLocaleString()}/mo starting (₹2.16L+ LPA)` : "₹18,000/mo starting (₹2.16L+ LPA)"}
                     </span>
                     <span className="text-[#d4d4d8]">·</span>
                     <span className="text-[#09090b] font-semibold">
@@ -728,7 +753,7 @@ export function AgentCommandCenter({ onToast }: AgentCommandCenterProps) {
                   onClick={handleApproveAndDispatch}
                   className="font-mono text-[11px] font-semibold text-white bg-[#09090b] hover:bg-[#27272a] px-4 py-1.5 flex items-center gap-2 transition-opacity disabled:opacity-50"
                 >
-                  <span>{dispatching ? "Executing Playwright Dispatch..." : "Approve & Dispatch Application"}</span>
+                  <span>{dispatching ? "Executing Playwright Auto-Dispatch..." : "Dispatch Application (Playwright Auto-Submit)"}</span>
                   <span className="text-xs">&rarr;</span>
                 </button>
               </div>
@@ -763,14 +788,32 @@ export function AgentCommandCenter({ onToast }: AgentCommandCenterProps) {
                   <div className="space-y-1 border-t border-[#f4f4f5] pt-3">
                     <span className="font-mono text-[10px] text-[#71717a] tracking-wider block">EXECUTION ENGINE</span>
                     <div className="text-[13px] text-[#09090b]">Headless Playwright v1.42</div>
-                    <div className="text-[11px] text-[#71717a]">Stealth fingerprint spoofing, residential proxy egress, humanized keystrokes.</div>
+                    <div className="text-[11px] text-[#71717a]">Stealth fingerprint spoofing, residential proxy egress, automated form autofill &amp; auto-submit.</div>
                   </div>
 
                   <div className="space-y-1.5 border-t border-[#f4f4f5] pt-3">
                     <span className="font-mono text-[10px] text-[#71717a] tracking-wider block">DISPATCH GATING PROTOCOL</span>
-                    <div className="flex gap-2 font-mono text-[10px]">
-                      <span className="border border-[#09090b] bg-[#f4f4f5] text-[#09090b] px-2 py-1 font-medium">[X] HUMAN-IN-THE-LOOP APPROVAL</span>
-                      <span className="border border-[#e4e4e7] text-[#a1a1aa] px-2 py-1">[ ] UNATTENDED AUTO-DISPATCH</span>
+                    <div className="flex flex-wrap gap-2 font-mono text-[10px]">
+                      <button
+                        onClick={() => handleToggleAutoSubmit(true)}
+                        className={`px-2.5 py-1 transition-colors ${
+                          profile?.auto_submit_enabled !== false
+                            ? "border border-[#09090b] bg-[#09090b] text-white font-medium"
+                            : "border border-[#e4e4e7] bg-white text-[#71717a] hover:text-[#09090b]"
+                        }`}
+                      >
+                        [X] FULLY UNATTENDED AUTO-DISPATCH (ACTIVE)
+                      </button>
+                      <button
+                        onClick={() => handleToggleAutoSubmit(false)}
+                        className={`px-2.5 py-1 transition-colors ${
+                          profile?.auto_submit_enabled === false
+                            ? "border border-[#09090b] bg-[#09090b] text-white font-medium"
+                            : "border border-[#e4e4e7] bg-white text-[#71717a] hover:text-[#09090b]"
+                        }`}
+                      >
+                        [ ] SUPERVISED MANUAL APPROVAL GATE
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -812,11 +855,14 @@ export function AgentCommandCenter({ onToast }: AgentCommandCenterProps) {
                   </div>
 
                   <div className="space-y-1 border-t border-[#f4f4f5] pt-3">
-                    <span className="font-mono text-[10px] text-[#71717a] tracking-wider block">COMPENSATION FLOOR</span>
-                    <div className="text-[13px] font-semibold text-[#09090b] tabular-nums">
-                      {profile?.min_salary ? `₹${(profile.min_salary / 100000).toFixed(1)}L LPA` : "₹18,00,000 – ₹35,00,000 LPA"}
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-[10px] text-[#71717a] tracking-wider block">COMPENSATION FLOOR</span>
+                      <span className="font-mono text-[9px] text-[#09090b] font-semibold border border-[#09090b] px-1 bg-[#f4f4f5]">ENFORCED</span>
                     </div>
-                    <div className="text-[11px] text-[#71717a]">Jobs below threshold automatically filtered out from batch execution.</div>
+                    <div className="text-[13px] font-semibold text-[#09090b] tabular-nums">
+                      ₹{profile?.min_salary ? profile.min_salary.toLocaleString() : "18,000"} / month starting (₹2.16L+ LPA)
+                    </div>
+                    <div className="text-[11px] text-[#71717a]">Jobs with compensation below ₹18,000/month or &lt;2.16 LPA are automatically filtered out.</div>
                   </div>
                 </div>
               </div>

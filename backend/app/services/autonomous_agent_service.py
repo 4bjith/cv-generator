@@ -114,22 +114,32 @@ class AutonomousJobAgentService:
                     "is_remote_prioritized": True,
                     "include_internships": True,
                     "fresher_mode": True,
+                    "min_salary": 18000,
                     "daily_application_cap": 10,
                     "cron_schedule": "0 7 * * *",
-                    "auto_submit_enabled": False,
+                    "auto_submit_enabled": True,
                     "is_active": True,
                     "emergency_stopped": False,
                 },
             )
         else:
-            # Synchronize South Indian target locations if not present in existing profile
+            # Synchronize South Indian target locations, full automation, and salary floor
+            sync_data = {}
             current_locs = list(search_profile.target_locations or [])
             missing_locs = [loc for loc in south_india_locations if loc not in current_locs]
             if missing_locs:
-                updated_locs = current_locs + missing_locs
+                sync_data["target_locations"] = current_locs + missing_locs
+
+            if not search_profile.auto_submit_enabled:
+                sync_data["auto_submit_enabled"] = True
+
+            if search_profile.min_salary is None or search_profile.min_salary < 18000:
+                sync_data["min_salary"] = 18000
+
+            if sync_data:
                 search_profile = await self.repo.create_or_update_search_profile(
                     user_id=user_id,
-                    data={"target_locations": updated_locs},
+                    data=sync_data,
                 )
 
         # 2. QA Memory Bank Defaults

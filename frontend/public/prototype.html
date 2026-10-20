@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html class="dark" lang="en">
+<html class="light" lang="en">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -876,7 +876,7 @@
         <span class="pulse-dot status-pulse"></span>
         <span>AGENT / AUTONOMOUS JOB RUNNER</span>
       </div>
-      <span class="badge-tag">[ACTIVE]</span>
+      <span class="badge-tag" style="border-color: var(--text-primary); color: var(--text-primary); font-weight: 600;">[ONLINE / FULLY AUTONOMOUS]</span>
     </div>
 
     <!-- Center Stepper Navigation -->
@@ -898,7 +898,7 @@
       <span class="step-divider">|</span>
       <span class="tabular">3 Tailored</span>
       <span class="step-divider">|</span>
-      <span style="color: var(--text-primary);" class="tabular">1 Pending Review</span>
+      <span style="color: var(--text-primary); font-weight: 500;" class="tabular">0 Gate Pauses (Full Auto)</span>
       <span class="step-divider">|</span>
       <span id="clockDisplay" class="tabular">08:42:15 IST</span>
       
@@ -941,15 +941,15 @@
         <div class="log-terminal">
           <div class="log-line">
             <span class="log-time">[08:30:12]</span>
-            <span>Crawled 14 job portals across South India (Bengaluru, Hyderabad, Chennai).</span>
+            <span>Crawled 14 job portals across South India (Bengaluru, Hyderabad, Chennai, Kochi, Kerala).</span>
           </div>
           <div class="log-line">
             <span class="log-time">[08:31:45]</span>
-            <span>Filter criteria passed: React 18, Concurrency, High-frequency UI, &gt;₹20 LPA.</span>
+            <span>Salary floor verified: &gt;= ₹18,000/month (2.16L+ LPA). Tech criteria matched: React 18, Concurrency.</span>
           </div>
           <div class="log-line">
             <span class="log-time">[08:33:02]</span>
-            <span>Target acquired: Zerodha Broking Ltd. Parsing schema requirements...</span>
+            <span>Target acquired: Zerodha Broking Ltd. Headless Playwright auto-submit session armed.</span>
           </div>
         </div>
 
@@ -963,14 +963,14 @@
             <div class="label-caps" style="color: var(--text-muted);">08:35:40 IST</div>
           </div>
           <div class="bubble-body">
-            Morning pipeline completed for South India (Bengaluru, Hyderabad, Chennai). Identified top match: <strong style="color: var(--text-primary); font-weight: 600;">Senior Frontend Engineer at Zerodha</strong>. Tailored CV and verified Playwright submission form. Awaiting your approval.
+            Autonomous morning pipeline completed. Evaluated candidate opportunities for Abhijith AT across South India. Minimum compensation criteria strictly verified (&gt;= ₹18,000/month starting / 2.16L+ LPA). Fully autonomous mode active: applications are automatically tailored and submitted via Playwright without manual intervention.
           </div>
 
           <!-- Evaluation Parameters Breakdown -->
           <div class="bubble-meta-card">
             <div style="display: flex; justify-content: space-between; align-items: center;" class="label-caps">
               <span style="color: var(--text-muted);">EVALUATION PARAMETERS</span>
-              <span style="color: var(--text-primary); font-weight: 600;">[ 94% CONFIDENCE ]</span>
+              <span style="color: var(--text-primary); font-weight: 600;">[ 96% CONFIDENCE ]</span>
             </div>
             <p style="font-size: 11px; color: var(--text-secondary); line-height: 1.5;">
               Matched criteria: React concurrency, performance profiling, high-frequency trading UI systems. Verified against target profile.
@@ -1030,7 +1030,7 @@
               <span class="meta-separator">·</span>
               <span id="targetLocation">Bengaluru, KA (Hybrid)</span>
               <span class="meta-separator">·</span>
-              <span style="color: var(--text-primary);" class="tabular" id="targetComp">₹24–32 LPA</span>
+              <span style="color: var(--text-primary);" class="tabular" id="targetComp">₹18,000 – ₹35,000 / mo starting (₹2.16L+ LPA)</span>
               <span class="meta-separator">·</span>
               <span style="color: var(--text-primary); font-weight: 600;" id="targetMatch">Match 94%</span>
             </div>
@@ -1150,7 +1150,7 @@
         <div class="action-right-cluster">
           <button class="btn-secondary" onclick="previewCoverNoteModal()">Edit Cover Note</button>
           <button class="btn-primary" id="dispatchBtn" onclick="dispatchApplication()">
-            <span>Approve &amp; Dispatch Application</span>
+            <span>Dispatch Application (Playwright Auto-Submit)</span>
             <span class="label-caps">-&gt;</span>
           </button>
         </div>
@@ -1184,14 +1184,14 @@
               <span class="setting-label">AUTOMATION ENGINE</span>
               <span class="setting-val">Headless Playwright v1.42</span>
               <span style="font-size: 11px; color: var(--text-muted);">
-                Stealth fingerprint spoofing, residential egress proxy, human keystroke delays (45-130ms)
+                Stealth fingerprint spoofing, residential egress proxy, human keystroke delays (45-130ms), automated auto-submit
               </span>
             </div>
             <div class="setting-row">
               <span class="setting-label">DISPATCH GATING PROTOCOL</span>
               <div class="pill-group">
-                <span class="mono-pill active">[X] HUMAN-IN-THE-LOOP APPROVAL</span>
-                <span class="mono-pill">[ ] FULLY UNATTENDED AUTO-DISPATCH</span>
+                <span class="mono-pill active" style="border-color: var(--text-primary); color: var(--text-primary); background: var(--bg-surface-elevated);">[X] FULLY UNATTENDED AUTO-DISPATCH (ACTIVE)</span>
+                <span class="mono-pill">[ ] SUPERVISED MANUAL APPROVAL GATE</span>
               </div>
             </div>
           </div>
@@ -1223,9 +1223,12 @@
               </div>
             </div>
             <div class="setting-row">
-              <span class="setting-label">COMPENSATION FLOOR</span>
-              <span class="setting-val tabular" style="font-weight: 600;">₹18,00,000 – ₹35,00,000 LPA</span>
-              <span style="font-size: 11px; color: var(--text-muted);">Applications below threshold automatically filtered out</span>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span class="setting-label">COMPENSATION FLOOR</span>
+                <span class="badge-tag" style="border-color: var(--text-primary); color: var(--text-primary);">ENFORCED</span>
+              </div>
+              <span class="setting-val tabular" style="font-weight: 600;">₹18,000 / month starting (₹2.16L+ LPA)</span>
+              <span style="font-size: 11px; color: var(--text-muted);">Applications with compensation below ₹18,000/month or &lt;2.16 LPA are automatically filtered out</span>
             </div>
           </div>
         </div>
