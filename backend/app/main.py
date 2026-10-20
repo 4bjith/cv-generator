@@ -29,7 +29,13 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         extra={"event": "startup", "app_env": settings.app_env},
     )
     # Initialize engine
-    get_engine()
+    engine = get_engine()
+    if settings.database_url.startswith("sqlite"):
+        async with engine.begin() as conn:
+            from app.db.base import Base
+            import app.models  # noqa: F401
+            await conn.run_sync(Base.metadata.create_all)
+        logger.info("SQLite database tables verified/created successfully.")
     yield
     logger.info("Shutting down AI CV Maker API", extra={"event": "shutdown"})
     try:
