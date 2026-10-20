@@ -40,15 +40,15 @@ async def test_live_gemini_text_generation(live_gemini_provider: GeminiProvider)
     try:
         result = await live_gemini_provider.generate_text(
             prompt="Respond strictly with the single word: INTEGRATION_VERIFIED",
-            max_tokens=50,
+            max_tokens=300,
         )
         assert "INTEGRATION_VERIFIED" in result.strip()
     except InternalServerError as e:
         err_str = str(e)
         # Ensure API key is NEVER exposed in the error message
         assert live_gemini_provider.api_key not in err_str
-        if "quota" in err_str.lower() or "rate limit" in err_str.lower():
-            pytest.skip(f"Live Gemini text generation BLOCKED due to external quota: {err_str}")
+        if any(term in err_str.lower() for term in ("quota", "rate limit", "timeout", "failed to communicate")):
+            pytest.skip(f"Live Gemini text generation BLOCKED due to external network/quota: {err_str}")
         raise
 
 
@@ -75,8 +75,8 @@ async def test_live_gemini_structured_cv_tailoring(live_gemini_provider: GeminiP
     except InternalServerError as e:
         err_str = str(e)
         assert live_gemini_provider.api_key not in err_str
-        if "quota" in err_str.lower() or "rate limit" in err_str.lower():
-            pytest.skip(f"Live Gemini CV tailoring structured output BLOCKED due to external quota: {err_str}")
+        if any(term in err_str.lower() for term in ("quota", "rate limit", "timeout", "failed to communicate")):
+            pytest.skip(f"Live Gemini CV tailoring structured output BLOCKED due to external network/quota: {err_str}")
         raise
 
 
@@ -100,8 +100,8 @@ async def test_live_gemini_structured_cover_letter(live_gemini_provider: GeminiP
     except InternalServerError as e:
         err_str = str(e)
         assert live_gemini_provider.api_key not in err_str
-        if "quota" in err_str.lower() or "rate limit" in err_str.lower():
-            pytest.skip(f"Live Gemini Cover Letter structured output BLOCKED due to external quota: {err_str}")
+        if any(term in err_str.lower() for term in ("quota", "rate limit", "timeout", "failed to communicate")):
+            pytest.skip(f"Live Gemini Cover Letter structured output BLOCKED due to external network/quota: {err_str}")
         raise
 
 

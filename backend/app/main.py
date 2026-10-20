@@ -32,6 +32,13 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     get_engine()
     yield
     logger.info("Shutting down AI CV Maker API", extra={"event": "shutdown"})
+    try:
+        from app.ai.factory import get_ai_provider
+        ai_provider = get_ai_provider()
+        if hasattr(ai_provider, "aclose"):
+            await ai_provider.aclose()
+    except Exception as exc:
+        logger.warning(f"Error during AI provider cleanup: {exc}")
     await close_db_engine()
 
 

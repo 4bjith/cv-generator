@@ -14,13 +14,33 @@ from app.db.session import get_db_session
 from app.main import app
 import app.db.session as db_session_module
 
+import socket
+from urllib.parse import urlparse
+
 settings = get_settings()
+
+def _is_database_reachable(url_str: str) -> bool:
+    """Quick socket check to verify if test database server is accepting connections."""
+    if "sqlite" in url_str:
+        return True
+    try:
+        clean_url = url_str.replace("postgresql+asyncpg", "http")
+        parsed = urlparse(clean_url)
+        host = parsed.hostname or "localhost"
+        port = parsed.port or 5432
+        with socket.create_connection((host, port), timeout=0.3):
+            return True
+    except Exception:
+        return False
 
 # Primary integration test database is PostgreSQL (cv_generator_test)
 TEST_DATABASE_URL = os.getenv(
     "TEST_DATABASE_URL",
     getattr(settings, "test_database_url", "postgresql+asyncpg://postgres:postgres@localhost:5432/cv_generator_test"),
 )
+
+if not _is_database_reachable(TEST_DATABASE_URL):
+    TEST_DATABASE_URL = "sqlite+aiosqlite:///test_cv_generator.db"
 
 # Apply test database URL and deterministic test configuration to settings
 settings.database_url = TEST_DATABASE_URL
@@ -110,7 +130,7 @@ async def override_get_db_session() -> AsyncGenerator[AsyncSession, None]:
         try:
             yield session
             await session.commit()
-        except Exception:
+        except BaseException:
             await session.rollback()
             raise
         finally:

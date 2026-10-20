@@ -67,7 +67,7 @@ class CoverLetterService:
 
     async def generate_cover_letter(
         self,
-        user_id: uuid.UUID,
+        user_id: Union[uuid.UUID, str],
         request: GenerateCoverLetterRequest,
     ) -> CoverLetterResponse:
         """
@@ -75,8 +75,10 @@ class CoverLetterService:
         Strict zero-hallucination constraint: only asserts confirmed candidate profile facts,
         metrics, and confirmed clarification answers.
         """
+        uid = uuid.UUID(str(user_id)) if isinstance(user_id, str) else user_id
+
         # 1. Fetch and authorize target job
-        job = await self.job_repo.get_by_id(job_id=request.job_id, user_id=user_id)
+        job = await self.job_repo.get_by_id(job_id=request.job_id, user_id=uid)
         if not job:
             raise NotFoundError(
                 message="Target job not found or you do not have permission to access it.",
@@ -88,7 +90,7 @@ class CoverLetterService:
         if request.cv_version_id:
             cv_version = await self.cv_version_repo.get_by_id(
                 version_id=request.cv_version_id,
-                user_id=user_id,
+                user_id=uid,
             )
             if not cv_version:
                 raise NotFoundError(
@@ -97,7 +99,7 @@ class CoverLetterService:
                 )
 
         # 3. Fetch candidate profile
-        profile = await self.profile_repo.get_by_user_id(user_id=user_id)
+        profile = await self.profile_repo.get_by_user_id(user_id=uid)
         if not profile:
             raise NotFoundError(
                 message="Candidate profile not found. Please set up your profile first.",
@@ -106,7 +108,7 @@ class CoverLetterService:
 
         # 4. Fetch confirmed clarifications for this job
         clarification_session = await self.clarification_service.get_or_create_session(
-            user_id=user_id,
+            user_id=uid,
             job_id=job.id,
         )
         answered_clarifications = [
@@ -204,7 +206,7 @@ class CoverLetterService:
         letter_name = request.name or f"{job.title} at {job.company_name} - Cover Letter"
         cover_letter = CoverLetter(
             id=uuid.uuid4(),
-            user_id=user_id,
+            user_id=uid,
             job_target_id=job.id,
             cv_version_id=cv_version.id if cv_version else None,
             name=letter_name,
@@ -235,20 +237,23 @@ class CoverLetterService:
         )
 
         saved = await self.cover_letter_repo.create(cover_letter)
-        logger.info(f"Evidence-grounded cover letter {saved.id} created successfully for user {user_id}")
+        logger.info(f"Evidence-grounded cover letter {saved.id} created successfully for user {uid}")
         return self._to_response(saved)
 
     async def regenerate_cover_letter(
         self,
-        letter_id: uuid.UUID,
-        user_id: uuid.UUID,
+        letter_id: Union[uuid.UUID, str],
+        user_id: Union[uuid.UUID, str],
         request: RegenerateCoverLetterRequest,
     ) -> CoverLetterResponse:
         """
         Regenerate an existing cover letter with adjusted tone, length, or candidate instructions.
         When preserve_as_new_version=True, creates a new independent version record, preserving history.
         """
-        existing = await self.cover_letter_repo.get_by_id(letter_id=letter_id, user_id=user_id)
+        uid = uuid.UUID(str(user_id)) if isinstance(user_id, str) else user_id
+        lid = uuid.UUID(str(letter_id)) if isinstance(letter_id, str) else letter_id
+
+        existing = await self.cover_letter_repo.get_by_id(letter_id=lid, user_id=uid)
         if not existing:
             raise NotFoundError(
                 message="Cover letter not found or you do not have permission to access it.",
@@ -258,9 +263,9 @@ class CoverLetterService:
         # Resolve associated job and profile
         job: Optional[JobTarget] = None
         if existing.job_target_id:
-            job = await self.job_repo.get_by_id(job_id=existing.job_target_id, user_id=user_id)
+            job = await self.job_repo.get_by_id(job_id=existing.job_target_id, user_id=uid)
 
-        profile = await self.profile_repo.get_by_user_id(user_id=user_id)
+        profile = await self.profile_repo.get_by_user_id(user_id=uid)
         if not profile:
             raise NotFoundError(message="Candidate profile not found.", code="PROFILE_NOT_FOUND")
 
@@ -272,7 +277,7 @@ class CoverLetterService:
         # Clarifications
         answered_clarifications = []
         if job:
-            clar_session = await self.clarification_service.get_or_create_session(user_id=user_id, job_id=job.id)
+            clar_session = await self.clarification_service.get_or_create_session(user_id=uid, job_id=job.id)
             answered_clarifications = [
                 q for q in clar_session.questions
                 if q.status == ClarificationQuestionStatus.ANSWERED and q.answer
@@ -347,7 +352,7 @@ class CoverLetterService:
             new_name = request.new_name or f"{existing.name} (Rev)"
             new_letter = CoverLetter(
                 id=uuid.uuid4(),
-                user_id=user_id,
+                user_id=uid,
                 job_target_id=existing.job_target_id,
                 cv_version_id=existing.cv_version_id,
                 name=new_name,
@@ -404,12 +409,14 @@ class CoverLetterService:
 
     async def update_cover_letter(
         self,
-        letter_id: uuid.UUID,
-        user_id: uuid.UUID,
+        letter_id: Union[uuid.UUID, str],
+        user_id: Union[uuid.UUID, str],
         request: UpdateCoverLetterRequest,
     ) -> CoverLetterResponse:
         """Update editable fields on a cover letter."""
-        letter = await self.cover_letter_repo.get_by_id(letter_id=letter_id, user_id=user_id)
+        uid = uuid.UUID(str(user_id)) if isinstance(user_id, str) else user_id
+        lid = uuid.UUID(str(letter_id)) if isinstance(letter_id, str) else letter_id
+        letter = await self.cover_letter_repo.get_by_id(letter_id=lid, user_id=uid)
         if not letter:
             raise NotFoundError(
                 message="Cover letter not found or you do not have permission to access it.",
@@ -470,11 +477,13 @@ class CoverLetterService:
 
     async def duplicate_cover_letter(
         self,
-        letter_id: uuid.UUID,
-        user_id: uuid.UUID,
+        letter_id: Union[uuid.UUID, str],
+        user_id: Union[uuid.UUID, str],
     ) -> CoverLetterResponse:
         """Duplicate an existing cover letter as an independent new draft."""
-        original = await self.cover_letter_repo.get_by_id(letter_id=letter_id, user_id=user_id)
+        uid = uuid.UUID(str(user_id)) if isinstance(user_id, str) else user_id
+        lid = uuid.UUID(str(letter_id)) if isinstance(letter_id, str) else letter_id
+        original = await self.cover_letter_repo.get_by_id(letter_id=lid, user_id=uid)
         if not original:
             raise NotFoundError(
                 message="Cover letter not found or you do not have permission to access it.",
@@ -483,7 +492,7 @@ class CoverLetterService:
 
         clone = CoverLetter(
             id=uuid.uuid4(),
-            user_id=user_id,
+            user_id=uid,
             job_target_id=original.job_target_id,
             cv_version_id=original.cv_version_id,
             name=f"{original.name} (Copy)",
@@ -513,26 +522,30 @@ class CoverLetterService:
 
     async def delete_cover_letter(
         self,
-        letter_id: uuid.UUID,
-        user_id: uuid.UUID,
+        letter_id: Union[uuid.UUID, str],
+        user_id: Union[uuid.UUID, str],
     ) -> None:
         """Delete a cover letter with strict ownership enforcement."""
-        letter = await self.cover_letter_repo.get_by_id(letter_id=letter_id, user_id=user_id)
+        uid = uuid.UUID(str(user_id)) if isinstance(user_id, str) else user_id
+        lid = uuid.UUID(str(letter_id)) if isinstance(letter_id, str) else letter_id
+        letter = await self.cover_letter_repo.get_by_id(letter_id=lid, user_id=uid)
         if not letter:
             raise NotFoundError(
                 message="Cover letter not found or you do not have permission to access it.",
                 code="COVER_LETTER_NOT_FOUND",
             )
         await self.cover_letter_repo.delete(letter)
-        logger.info(f"Deleted cover letter {letter_id} for user {user_id}")
+        logger.info(f"Deleted cover letter {lid} for user {uid}")
 
     async def get_cover_letter(
         self,
-        letter_id: uuid.UUID,
-        user_id: uuid.UUID,
+        letter_id: Union[uuid.UUID, str],
+        user_id: Union[uuid.UUID, str],
     ) -> CoverLetterResponse:
         """Retrieve single cover letter with relationship details."""
-        letter = await self.cover_letter_repo.get_by_id(letter_id=letter_id, user_id=user_id)
+        uid = uuid.UUID(str(user_id)) if isinstance(user_id, str) else user_id
+        lid = uuid.UUID(str(letter_id)) if isinstance(letter_id, str) else letter_id
+        letter = await self.cover_letter_repo.get_by_id(letter_id=lid, user_id=uid)
         if not letter:
             raise NotFoundError(
                 message="Cover letter not found or you do not have permission to access it.",
@@ -542,7 +555,7 @@ class CoverLetterService:
 
     async def list_cover_letters(
         self,
-        user_id: uuid.UUID,
+        user_id: Union[uuid.UUID, str],
         status: Optional[str] = None,
         job_target_id: Optional[Union[uuid.UUID, str]] = None,
         search: Optional[str] = None,
@@ -550,10 +563,12 @@ class CoverLetterService:
         offset: int = 0,
     ) -> Tuple[List[CoverLetterSummary], int]:
         """List user cover letters with pagination and filters."""
+        uid = uuid.UUID(str(user_id)) if isinstance(user_id, str) else user_id
+        jid = uuid.UUID(str(job_target_id)) if (job_target_id and isinstance(job_target_id, str)) else job_target_id
         letters, total = await self.cover_letter_repo.list_by_user(
-            user_id=user_id,
+            user_id=uid,
             status=status,
-            job_target_id=job_target_id,
+            job_target_id=jid,
             search=search,
             limit=limit,
             offset=offset,

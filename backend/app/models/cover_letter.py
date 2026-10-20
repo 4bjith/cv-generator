@@ -92,5 +92,14 @@ class CoverLetter(Base, TimestampMixin):
         back_populates="cover_letters",
     )
 
+    def __init__(self, **kwargs: Any) -> None:
+        for uuid_field in ("id", "user_id", "job_target_id", "cv_version_id"):
+            if uuid_field in kwargs and isinstance(kwargs[uuid_field], str):
+                try:
+                    kwargs[uuid_field] = uuid.UUID(kwargs[uuid_field])
+                except ValueError:
+                    pass
+        super().__init__(**kwargs)
+
     def __repr__(self) -> str:
         return f"<CoverLetter id={self.id} user_id={self.user_id} name={self.name} status={self.status}>"

@@ -139,7 +139,7 @@ export default function Home() {
   }, [view]);
 
   const addToast = (title: string, message: string, type: ToastMessage["type"] = "success") => {
-    const id = Date.now();
+    const id = Date.now() + Math.floor(Math.random() * 100000);
     setToasts((items) => [...items, { id, title, message, type }]);
     window.setTimeout(() => setToasts((items) => items.filter((item) => item.id !== id)), 4200);
   };
@@ -269,7 +269,7 @@ export default function Home() {
         return (
           <Suspense fallback={<ApplicationDetailSkeleton />}>
             <ApplicationDetailView
-              application={applications[0]}
+              application={applications.length > 0 ? applications[0] : null}
               onBack={() => navigate("applications")}
               onToast={addToast}
             />

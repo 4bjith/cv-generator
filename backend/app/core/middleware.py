@@ -32,18 +32,28 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
             request_id_ctx.reset(req_token)
 
 
+TRUSTED_PROXIES = {"127.0.0.1", "::1", "localhost", "testserver"}
+
+
+def get_client_ip(request: Request) -> str:
+    """Safely extract client IP, only trusting X-Forwarded-For if request came from a trusted proxy/localhost."""
+    direct_ip = request.client.host if request.client else "unknown"
+    if direct_ip in TRUSTED_PROXIES:
+        forwarded = request.headers.get("x-forwarded-for")
+        if forwarded:
+            first_ip = forwarded.split(",")[0].strip()
+            if first_ip:
+                return first_ip
+    return direct_ip
+
+
 class StructuredLoggingMiddleware(BaseHTTPMiddleware):
     """Log structured telemetry data for every HTTP request."""
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         start_time = time.perf_counter()
         request_id = getattr(request.state, "request_id", None) or request_id_ctx.get()
-
-        client_ip = request.headers.get("x-forwarded-for") or (
-            request.client.host if request.client else "unknown"
-        )
-        if "," in client_ip:
-            client_ip = client_ip.split(",")[0].strip()
+        client_ip = get_client_ip(request)
 
         try:
             response = await call_next(request)
