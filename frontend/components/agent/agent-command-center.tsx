@@ -1202,8 +1202,8 @@ React.js developer with 6+ months of professional experience as a Junior Softwar
 
                 {resumeTab === "preview" ? (
                   /* Authentic ATS Clean Document Layout */
-                  <div className="flex-1 overflow-y-auto p-6 md:p-8 bg-[#f4f4f5] flex justify-center">
-                    <div className="w-full max-w-[760px] bg-white p-8 md:p-10 shadow border border-[#e4e4e7] text-[#09090b] font-sans text-[12px] leading-relaxed">
+                  <div className="flex-1 overflow-y-auto p-4 md:p-8 bg-[#f4f4f5]">
+                    <div className="w-full max-w-[760px] mx-auto bg-white p-8 md:p-10 shadow border border-[#e4e4e7] text-[#09090b] font-sans text-[12px] leading-relaxed">
                       {/* Name & Subtitle Header */}
                       <div className="text-center pb-3">
                         <h1 className="text-2xl font-bold tracking-tight text-[#09090b]">Abhijith A T</h1>
