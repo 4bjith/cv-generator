@@ -9,6 +9,7 @@ import {
   Gear,
   GithubLogo,
   House,
+  Lightning,
   List,
   MagnifyingGlass,
   Plus,
@@ -26,7 +27,7 @@ type NavItem = { id: AppView; label: string; icon: Icon };
 type NavGroup = { label: string; items: NavItem[] };
 
 const navGroups: NavGroup[] = [
-  { label: "Workspace", items: [{ id: "dashboard", label: "Overview", icon: House }, { id: "profile", label: "Candidate Profile", icon: UserCircle }, { id: "projects", label: "Projects & GitHub", icon: GithubLogo }] },
+  { label: "Workspace", items: [{ id: "dashboard", label: "Overview", icon: House }, { id: "agent", label: "Autonomous Agent", icon: Lightning }, { id: "profile", label: "Candidate Profile", icon: UserCircle }, { id: "projects", label: "Projects & GitHub", icon: GithubLogo }] },
   { label: "Application Studio", items: [{ id: "add-job", label: "Target Jobs", icon: Target }, { id: "job-analysis", label: "Job Analysis", icon: ChartLineUp }, { id: "cv-editor", label: "CV Editor", icon: FileText }, { id: "interview", label: "Interview Prep", icon: BookOpenText }] },
   { label: "Track", items: [{ id: "applications", label: "Applications", icon: Briefcase }, { id: "settings", label: "Settings", icon: Gear }] },
 ];

@@ -1,3 +1,4 @@
+import asyncio
 import hashlib
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -95,7 +96,7 @@ class AuthService:
                 code="EMAIL_ALREADY_EXISTS",
             )
 
-        hashed = hash_password(request.password)
+        hashed = await asyncio.to_thread(hash_password, request.password)
         user = await self.user_repo.create(
             email=normalized_email,
             password_hash=hashed,
@@ -113,7 +114,14 @@ class AuthService:
         """Authenticate candidate credentials, update last login, and issue an auth session."""
         normalized_email = request.email.strip().lower()
         user = await self.user_repo.get_by_email(normalized_email)
-        if not user or not verify_password(request.password, user.password_hash):
+        if not user:
+            raise UnauthorizedError(
+                message="Invalid email address or password.",
+                code="INVALID_CREDENTIALS",
+            )
+
+        is_valid_password = await asyncio.to_thread(verify_password, request.password, user.password_hash)
+        if not is_valid_password:
             raise UnauthorizedError(
                 message="Invalid email address or password.",
                 code="INVALID_CREDENTIALS",

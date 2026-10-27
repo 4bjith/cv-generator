@@ -1,3 +1,4 @@
+import asyncio
 import copy
 from typing import Any, Dict, List, Optional, Tuple, Union
 import uuid
@@ -630,7 +631,7 @@ class CVService:
                 code="CV_VERSION_NOT_FOUND",
             )
         snapshot = CVContentSnapshot.model_validate(version.content_snapshot or {})
-        pdf_bytes = generate_cv_pdf(snapshot, overrides=overrides)
+        pdf_bytes = await asyncio.to_thread(generate_cv_pdf, snapshot, overrides=overrides)
         candidate_name = get_candidate_name(snapshot)
         filename = get_sanitized_export_filename(candidate_name, "pdf")
         return pdf_bytes, filename
@@ -650,7 +651,7 @@ class CVService:
                 code="CV_VERSION_NOT_FOUND",
             )
         snapshot = CVContentSnapshot.model_validate(version.content_snapshot or {})
-        docx_bytes = generate_cv_docx(snapshot, overrides=overrides)
+        docx_bytes = await asyncio.to_thread(generate_cv_docx, snapshot, overrides=overrides)
         candidate_name = get_candidate_name(snapshot)
         filename = get_sanitized_export_filename(candidate_name, "docx")
         return docx_bytes, filename

@@ -1,3 +1,4 @@
+import asyncio
 import uuid
 from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, Query, Response, status
@@ -198,7 +199,7 @@ async def export_pdf(
             code="COVER_LETTER_NOT_FOUND",
         )
 
-    buffer = generate_cover_letter_pdf(letter)
+    buffer = await asyncio.to_thread(generate_cover_letter_pdf, letter)
     filename = get_sanitized_cover_letter_filename(letter.name, "pdf")
 
     return Response(
@@ -234,7 +235,7 @@ async def export_docx(
             code="COVER_LETTER_NOT_FOUND",
         )
 
-    buffer = generate_cover_letter_docx(letter)
+    buffer = await asyncio.to_thread(generate_cover_letter_docx, letter)
     filename = get_sanitized_cover_letter_filename(letter.name, "docx")
 
     return Response(

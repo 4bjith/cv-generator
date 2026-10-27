@@ -36,6 +36,22 @@ class GeminiProvider(AIProviderInterface):
         self.embedding_model = embedding_model or getattr(settings, "gemini_embedding_model", "gemini-embedding-001")
         self.timeout = timeout
         self.max_retries = max_retries
+        self._client: Optional[httpx.AsyncClient] = None
+
+    async def _get_client(self) -> httpx.AsyncClient:
+        """Return or lazily initialize the shared connection-pooled HTTP client."""
+        if self._client is None or self._client.is_closed:
+            self._client = httpx.AsyncClient(
+                timeout=httpx.Timeout(self.timeout),
+                limits=httpx.Limits(max_keepalive_connections=20, max_connections=100),
+            )
+        return self._client
+
+    async def aclose(self) -> None:
+        """Dispose of the pooled HTTP client on shutdown."""
+        if self._client is not None and not self._client.is_closed:
+            await self._client.aclose()
+            self._client = None
 
     def _get_headers(self) -> Dict[str, str]:
         """
@@ -95,7 +111,8 @@ class GeminiProvider(AIProviderInterface):
     def _prepare_gemini_schema(raw_schema: Dict[str, Any]) -> Dict[str, Any]:
         """
         Convert standard Pydantic JSON Schema into Google Gemini-compliant responseSchema.
-        Recursively dereferences $defs / $ref and strips unsupported metadata keys ($defs, definitions, title, default).
+        Recursively dereferences $defs / $ref, flattens nullable anyOf patterns,
+        and strips unsupported metadata keys ($defs, definitions, title, default).
         """
         defs = raw_schema.get("$defs", {}) or raw_schema.get("definitions", {})
 
@@ -107,6 +124,19 @@ class GeminiProvider(AIProviderInterface):
                 resolved = defs.get(ref_name, {})
                 return resolve(dict(resolved))
 
+            # Flatten Pydantic v2 nullable anyOf construct: anyOf: [{type: '...'}, {type: 'null'}]
+            if "anyOf" in node:
+                variants = node["anyOf"]
+                non_null = [v for v in variants if isinstance(v, dict) and v.get("type") != "null"]
+                if len(non_null) == 1:
+                    base = resolve(dict(non_null[0]))
+                    if isinstance(base, dict):
+                        base["nullable"] = True
+                        return base
+                elif len(non_null) > 1:
+                    base = resolve(dict(non_null[0]))
+                    return base
+
             clean: Dict[str, Any] = {}
             for k, v in node.items():
                 if k in ("title", "$defs", "definitions", "default", "additionalProperties"):
@@ -117,6 +147,11 @@ class GeminiProvider(AIProviderInterface):
                     clean[k] = [resolve(item) if isinstance(item, dict) else item for item in v]
                 else:
                     clean[k] = v
+
+            # Gemini requires objects to declare properties
+            if clean.get("type") == "object" and "properties" not in clean:
+                clean["properties"] = {}
+
             return clean
 
         return resolve(raw_schema)
@@ -205,62 +240,62 @@ class GeminiProvider(AIProviderInterface):
         """
         headers = self._get_headers()
         last_network_error: Optional[Exception] = None
+        client = await self._get_client()
 
         for attempt in range(1, self.max_retries + 1):
             try:
-                async with httpx.AsyncClient(timeout=self.timeout) as client:
-                    resp = await client.post(url, headers=headers, json=payload)
+                resp = await client.post(url, headers=headers, json=payload)
 
-                    if resp.status_code == 200:
-                        return resp.json()
+                if resp.status_code == 200:
+                    return resp.json()
 
-                    elif resp.status_code == 429:
-                        err_msg = "Gemini rate limit exceeded."
-                        try:
-                            err_json = resp.json()
-                            if "error" in err_json and "message" in err_json["error"]:
-                                err_msg = err_json["error"]["message"]
-                        except Exception:
-                            pass
+                elif resp.status_code == 429:
+                    err_msg = "Gemini rate limit exceeded."
+                    try:
+                        err_json = resp.json()
+                        if "error" in err_json and "message" in err_json["error"]:
+                            err_msg = err_json["error"]["message"]
+                    except Exception:
+                        pass
 
-                        if attempt == self.max_retries:
-                            logger.error(f"Gemini quota/rate limit exhausted after {self.max_retries} attempts: {err_msg}")
-                            raise InternalServerError(f"Gemini API rate limit or quota exceeded: {err_msg}")
+                    if attempt == self.max_retries:
+                        logger.error(f"Gemini quota/rate limit exhausted after {self.max_retries} attempts: {err_msg}")
+                        raise InternalServerError(f"Gemini API rate limit or quota exceeded: {err_msg}")
 
-                        wait_time = min(2.0 ** attempt, 10.0)
-                        logger.warning(
-                            f"Gemini rate limit reached (429), retrying in {wait_time:.1f}s "
-                            f"(attempt {attempt}/{self.max_retries})"
+                    wait_time = min(2.0 ** attempt, 10.0)
+                    logger.warning(
+                        f"Gemini rate limit reached (429), retrying in {wait_time:.1f}s "
+                        f"(attempt {attempt}/{self.max_retries})"
+                    )
+                    await asyncio.sleep(wait_time)
+                    continue
+
+                elif resp.status_code >= 500:
+                    wait_time = min(1.5 ** attempt, 8.0)
+                    logger.warning(
+                        f"Gemini server error ({resp.status_code}), retrying in {wait_time:.1f}s "
+                        f"(attempt {attempt}/{self.max_retries})"
+                    )
+                    if attempt == self.max_retries:
+                        raise InternalServerError(
+                            f"Gemini API returned server error {resp.status_code} after {self.max_retries} attempts."
                         )
-                        await asyncio.sleep(wait_time)
-                        continue
+                    await asyncio.sleep(wait_time)
+                    continue
 
-                    elif resp.status_code >= 500:
-                        wait_time = min(1.5 ** attempt, 8.0)
-                        logger.warning(
-                            f"Gemini server error ({resp.status_code}), retrying in {wait_time:.1f}s "
-                            f"(attempt {attempt}/{self.max_retries})"
-                        )
-                        if attempt == self.max_retries:
-                            raise InternalServerError(
-                                f"Gemini API returned server error {resp.status_code} after {self.max_retries} attempts."
-                            )
-                        await asyncio.sleep(wait_time)
-                        continue
+                else:
+                    # Non-retryable client errors (400, 401, 403, 404, etc.)
+                    resp_text = resp.text
+                    err_msg = resp_text
+                    try:
+                        err_json = resp.json()
+                        if "error" in err_json and "message" in err_json["error"]:
+                            err_msg = err_json["error"]["message"]
+                    except Exception:
+                        pass
 
-                    else:
-                        # Non-retryable client errors (400, 401, 403, 404, etc.)
-                        resp_text = resp.text
-                        err_msg = resp_text
-                        try:
-                            err_json = resp.json()
-                            if "error" in err_json and "message" in err_json["error"]:
-                                err_msg = err_json["error"]["message"]
-                        except Exception:
-                            pass
-
-                        logger.error(f"Gemini request failed with status {resp.status_code}: {err_msg}")
-                        raise InternalServerError(f"Gemini API returned status {resp.status_code}: {err_msg}")
+                    logger.error(f"Gemini request failed with status {resp.status_code}: {err_msg}")
+                    raise InternalServerError(f"Gemini API returned status {resp.status_code}: {err_msg}")
 
             except (httpx.TimeoutException, httpx.NetworkError) as net_err:
                 last_network_error = net_err

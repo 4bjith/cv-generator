@@ -531,6 +531,8 @@ async def test_live_gemini_integration_end_to_end():
         assert len(embeddings[0]) > 0
         assert isinstance(embeddings[0][0], float)
     except InternalServerError as exc:
-        if "rate limit" in str(exc).lower() or "quota" in str(exc).lower() or "resource_exhausted" in str(exc).lower():
-            pytest.skip(f"External Google Gemini API quota currently exhausted on configured developer key: {exc}")
+        err_str = str(exc).lower()
+        if any(term in err_str for term in ("rate limit", "quota", "resource_exhausted", "timeout", "failed to communicate")):
+            pytest.skip(f"External Google Gemini API quota or network connection temporarily unavailable: {exc}")
         raise
+

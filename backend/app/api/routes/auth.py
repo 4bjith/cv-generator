@@ -1,6 +1,11 @@
+import time
+from collections import defaultdict
 from fastapi import APIRouter, Depends, Request, status
 
 from app.api.deps import get_current_user
+from app.core.config import get_settings
+from app.core.exceptions import RateLimitError
+from app.core.middleware import get_client_ip
 from app.schemas.auth import (
     LoginRequest,
     RefreshTokenRequest,
@@ -12,15 +17,36 @@ from app.schemas.common import GenericMessageResponse
 from app.services.auth_service import AuthService, get_auth_service
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+settings = get_settings()
+
+
+class SlidingWindowRateLimiter:
+    """In-memory sliding window rate limiter for brute-force protection."""
+
+    def __init__(self, limit: int = 15, window_seconds: int = 60) -> None:
+        self.limit = limit
+        self.window_seconds = window_seconds
+        self._requests: dict[str, list[float]] = defaultdict(list)
+
+    def check(self, key: str) -> None:
+        now = time.time()
+        window_start = now - self.window_seconds
+        timestamps = [t for t in self._requests[key] if t > window_start]
+        if len(timestamps) >= self.limit:
+            raise RateLimitError(
+                message=f"Too many authentication attempts. Please try again in {self.window_seconds} seconds.",
+                code="AUTH_RATE_LIMIT_EXCEEDED",
+            )
+        timestamps.append(now)
+        self._requests[key] = timestamps
+
+
+auth_rate_limiter = SlidingWindowRateLimiter(limit=15, window_seconds=60)
 
 
 def _extract_client_info(request: Request) -> tuple[str, str]:
     user_agent = request.headers.get("user-agent") or "unknown"
-    client_ip = request.headers.get("x-forwarded-for") or (
-        request.client.host if request.client else "unknown"
-    )
-    if "," in client_ip:
-        client_ip = client_ip.split(",")[0].strip()
+    client_ip = get_client_ip(request)
     return user_agent, client_ip
 
 
@@ -38,6 +64,9 @@ async def register(
 ) -> TokenResponse:
     """Register a new candidate with email, password, and full name."""
     user_agent, client_ip = _extract_client_info(http_request)
+    if settings.app_env != "test":
+        auth_rate_limiter.check(client_ip)
+
     return await auth_service.register(
         request_body,
         user_agent=user_agent,
@@ -59,6 +88,9 @@ async def login(
 ) -> TokenResponse:
     """Authenticate with registered email and password."""
     user_agent, client_ip = _extract_client_info(http_request)
+    if settings.app_env != "test":
+        auth_rate_limiter.check(client_ip)
+
     return await auth_service.login(
         request_body,
         user_agent=user_agent,
